@@ -16,6 +16,12 @@ app.use(express.json());
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes); 
 
+const moduleRoutes = require('./routes/module');
+const quizRoutes = require('./routes/quiz');
+
+app.use('/api/modules', moduleRoutes);
+app.use('/api/quizzes', quizRoutes);
+
 // Mengambil port dan URL database dari file .env
 const PORT = process.env.PORT || 5000;
 const dbURI = process.env.MONGO_URI;
