@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
-// Import file layar yang baru saja kita pisahkan
+// Import file layar
 import 'screens/home_screen.dart';
 import 'screens/materi_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   runApp(const CodeQuestApp());
@@ -23,7 +24,7 @@ class CodeQuestApp extends StatelessWidget {
         primaryColor: Colors.green,
         useMaterial3: true,
       ),
-      home: const MainScreen(),
+      home: const LoginScreen(),
     );
   }
 }
@@ -39,12 +40,12 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  // Daftar halaman dipanggil dari file yang sudah di-import di atas
-  static const List<Widget> _widgetOptions = <Widget>[
-    HomeScreen(),
-    MateriScreen(),
-    QuizScreen(),
-    ProfileScreen(),
+  // Daftar halaman (Sudah dihapus kata 'const' agar tidak error)
+  static final List<Widget> _widgetOptions = <Widget>[
+    const HomeScreen(),
+    const MateriScreen(),
+    const QuizScreen(),
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
