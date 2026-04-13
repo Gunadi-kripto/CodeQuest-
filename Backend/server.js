@@ -18,9 +18,11 @@ app.use('/api/auth', authRoutes);
 
 const moduleRoutes = require('./routes/module');
 const quizRoutes = require('./routes/quiz');
+const userRoutes = require('./routes/user');
 
 app.use('/api/modules', moduleRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/users', userRoutes);
 
 // Mengambil port dan URL database dari file .env
 const PORT = process.env.PORT || 5000;

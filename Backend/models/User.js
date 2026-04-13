@@ -1,3 +1,4 @@
+// models/User.js
 const mongoose = require('mongoose');
 
 // Membuat rancangan (blueprint) untuk data Pengguna
@@ -19,6 +20,10 @@ const userSchema = new mongoose.Schema({
     type: String, 
     default: "" // Kosong secara default sampai diisi dari Cloudinary
   },
+  bio: { 
+    type: String, 
+    default: '' 
+  },
   role: { 
     type: String, 
     default: "user" // Defaultnya pengguna biasa, bukan admin
@@ -34,7 +39,18 @@ const userSchema = new mongoose.Schema({
   achievement: { 
     type: Boolean, 
     default: false 
-  }
+  },
+  friends: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  }],
+  
+  // Menyimpan daftar ID orang yang mengirimkan permintaan pertemanan ke kita
+  friend_requests: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  }]
+  
 }, {
   // Otomatis membuat kolom created_at
   timestamps: { createdAt: 'created_at', updatedAt: false }
