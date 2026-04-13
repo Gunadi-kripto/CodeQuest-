@@ -173,5 +173,44 @@ class ApiService {
   }
 
 
+  static Future<List<dynamic>> searchUsers(String query, String currentUserId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/users/search?query=$query&currentUserId=$currentUserId'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) { return []; }
+  }
+
+  static Future<Map<String, dynamic>> sendFriendRequest(String senderId, String targetId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/request-friend'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'senderId': senderId, 'targetId': targetId}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) { return {'message': 'Gagal menghubungi server'}; }
+  }
+
+  static Future<Map<String, dynamic>> acceptFriendRequest(String userId, String senderId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/accept-friend'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': userId, 'senderId': senderId}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) { return {'message': 'Gagal menghubungi server'}; }
+  }
+
+  static Future<Map<String, dynamic>?> getSocialData(String userId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/users/$userId/social'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return null;
+    } catch (e) { return null; }
+  }
+
+
 
 }
