@@ -1,3 +1,5 @@
+// services/api_service.dart
+import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -90,6 +92,83 @@ class ApiService {
     } catch (e) {
       print('Error getQuizzes: $e');
       return [];
+    }
+  }
+
+  static Future<bool> addXp(String userId, int xpToAdd) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/add-xp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': userId,
+          'xpToAdd': xpToAdd,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        // Update data di memori HP agar bar level di Home langsung berubah!
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? userStr = prefs.getString('user_data');
+        if (userStr != null) {
+          Map<String, dynamic> userData = jsonDecode(userStr);
+          userData['total_xp'] = data['total_xp'];
+          userData['level'] = data['level'];
+          await prefs.setString('user_data', jsonEncode(userData));
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error addXp: $e');
+      return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateProfile(String userId, String nama, String bio, File? imageFile) async {
+    try {
+      var request = http.MultipartRequest('PUT', Uri.parse('$baseUrl/users/update-profile/$userId'));
+      
+      // Masukkan data teks
+      request.fields['nama_lengkap'] = nama;
+      request.fields['bio'] = bio;
+
+      // Masukkan file gambar jika ada
+      if (imageFile != null) {
+        request.files.add(await http.MultipartFile.fromPath('avatar', imageFile.path));
+      }
+
+      // Kirim ke server
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      var data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        // Jika sukses, perbarui data di memori HP agar foto langsung berubah
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_data', jsonEncode(data['user']));
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Gagal update profil'};
+      }
+    } catch (e) {
+      print('Error updateProfile: $e');
+      return {'success': false, 'message': 'Gagal menghubungi server'};
+    }
+  }
+  // FUNGSI HAPUS AKUN
+  static Future<bool> deleteAccount(String userId) async {
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/users/delete-account/$userId'));
+      if (response.statusCode == 200) {
+        await logoutUser(); // Hapus token dari HP
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
     }
   }
 

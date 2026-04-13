@@ -6,6 +6,7 @@ import 'screens/materi_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/quiz_list_screen.dart'; // Tambahkan baris ini
 
 void main() {
   runApp(const CodeQuestApp());
@@ -44,7 +45,7 @@ class _MainScreenState extends State<MainScreen> {
   static final List<Widget> _widgetOptions = <Widget>[
     const HomeScreen(),
     const MateriScreen(),
-    const QuizScreen(),
+    const QuizListScreen(),
     const ProfileScreen(),
   ];
 

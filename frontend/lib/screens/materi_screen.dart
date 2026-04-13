@@ -1,107 +1,92 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import 'materi_detail_screen.dart'; // Import file pembaca materi
 
-class MateriScreen extends StatelessWidget {
+class MateriScreen extends StatefulWidget {
   const MateriScreen({super.key});
 
-  final List<Map<String, dynamic>> modules = const [
-    {
-      "judul": "Bab 1: Pengenalan Algoritma",
-      "deskripsi": "Pahami dasar-dasar logika dan cara komputer berpikir sebelum mulai menulis kode.",
-      "icon": Icons.lightbulb_outline,
-      "color": Colors.orange,
-    },
-    {
-      "judul": "Bab 2: Dasar Variabel",
-      "deskripsi": "Belajar cara menyimpan data ke dalam memori komputer layaknya sebuah kotak penyimpanan.",
-      "icon": Icons.memory,
-      "color": Colors.blue,
-    },
-    {
-      "judul": "Bab 3: Logika Looping (For & While)",
-      "deskripsi": "Mengulang perintah secara otomatis tanpa harus menulis kode berkali-kali.",
-      "icon": Icons.loop,
-      "color": Colors.green,
-    },
-    {
-      "judul": "Bab 4: Struktur Kontrol (If/Else)",
-      "deskripsi": "Membuat program yang bisa mengambil keputusan sendiri berdasarkan kondisi tertentu.",
-      "icon": Icons.call_split,
-      "color": Colors.purple,
-    },
-  ];
+  @override
+  _MateriScreenState createState() => _MateriScreenState();
+}
+
+class _MateriScreenState extends State<MateriScreen> {
+  List<dynamic> modules = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadModules();
+  }
+
+  Future<void> _loadModules() async {
+    final fetchedModules = await ApiService.getModules();
+    if (mounted) {
+      setState(() {
+        modules = fetchedModules;
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text(
-          'Modul Pembelajaran',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
+        title: const Text('Daftar Materi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.green,
-        elevation: 0,
-        centerTitle: true,
+        automaticallyImplyLeading: false, // Menghilangkan tombol back karena ini adalah Tab Utama
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: modules.length,
-        itemBuilder: (context, index) {
-          final module = modules[index];
-          return Card(
-            elevation: 2,
-            margin: const EdgeInsets.only(bottom: 16.0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(15),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Membuka materi ${module["judul"]}...'),
-                    duration: const Duration(seconds: 1),
-                  ),
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: (module["color"] as Color).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(module["icon"], color: module["color"], size: 30),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            module["judul"],
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.green))
+          : modules.isEmpty
+              ? const Center(child: Text('Materi belum tersedia.', style: TextStyle(color: Colors.grey)))
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: modules.length,
+                  itemBuilder: (context, index) {
+                    final mod = modules[index];
+                    // Simulasi status dibaca (Gelap/Terang) - Nanti disambung ke backend UserProgress
+                    bool isRead = false; 
+
+                    return Card(
+                      elevation: isRead ? 0 : 2, // Kalau sudah dibaca, bayangannya hilang
+                      color: isRead ? Colors.grey[300] : Colors.white, // Kalau sudah dibaca jadi agak gelap
+                      margin: const EdgeInsets.only(bottom: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16),
+                        leading: CircleAvatar(
+                          backgroundColor: isRead ? Colors.grey[400] : Colors.green.withOpacity(0.2),
+                          child: Icon(isRead ? Icons.check : Icons.menu_book, 
+                            color: isRead ? Colors.white : Colors.green),
+                        ),
+                        title: Text(
+                          mod['judul_modul']?.toString() ?? 'Tanpa Judul', 
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isRead ? Colors.grey[600] : Colors.black)
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            mod['deskripsi']?.toString() ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: isRead ? Colors.grey[600] : Colors.grey[800]),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            module["deskripsi"],
-                            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                          ),
-                        ],
+                        ),
+                        trailing: Icon(Icons.arrow_forward_ios, color: isRead ? Colors.grey : Colors.green),
+                        onTap: () {
+                          // Pindah ke layar baca detail
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => MateriDetailScreen(module: mod)),
+                          );
+                        },
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
-                  ],
+                    );
+                  },
                 ),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 }
