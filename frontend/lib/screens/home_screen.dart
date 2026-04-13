@@ -13,6 +13,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic>? userData;
+  List<dynamic> leaderboard = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -20,29 +22,46 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadData();
   }
 
-  // Hanya memuat Profil User, tidak memuat materi lagi
   Future<void> _loadData() async {
+    // 1. Load Data Profil Diri Sendiri
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? userStr = prefs.getString('user_data');
     if (userStr != null) {
-      if (mounted) {
-        setState(() {
-          userData = jsonDecode(userStr);
-        });
-      }
+      userData = jsonDecode(userStr);
+    }
+
+    // 2. Load Data Leaderboard dari Backend
+    final fetchedLeaderboard = await ApiService.getLeaderboard();
+
+    if (mounted) {
+      setState(() {
+        leaderboard = fetchedLeaderboard;
+        isLoading = false;
+      });
     }
   }
 
   void _logout() async {
     await ApiService.logoutUser();
     if (mounted) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+      Navigator.pushAndRemoveUntil(
+        context, 
+        MaterialPageRoute(builder: (context) => const LoginScreen()), 
+        (route) => false
+      );
     }
+  }
+
+  // Menentukan warna piala/medali berdasarkan peringkat
+  Color _getRankColor(int index) {
+    if (index == 0) return Colors.amber; // Juara 1: Emas
+    if (index == 1) return Colors.grey[400]!; // Juara 2: Perak
+    if (index == 2) return const Color(0xFFCD7F32); // Juara 3: Perunggu
+    return Colors.green[200]!; // Sisanya: Hijau Muda
   }
 
   @override
   Widget build(BuildContext context) {
-    // Simulasi perhitungan level bar (misal: butuh 100 XP untuk naik level)
     int currentXp = userData?['total_xp'] ?? 0;
     double progress = (currentXp % 100) / 100.0;
 
@@ -59,85 +78,105 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: userData == null 
         ? const Center(child: CircularProgressIndicator(color: Colors.green))
-        : SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // === HEADER DASHBOARD & LEVEL BAR ===
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          const CircleAvatar(radius: 35, backgroundColor: Colors.white, child: Icon(Icons.person, size: 40, color: Colors.green)),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Halo, ${userData?['nama_lengkap'] ?? 'Coder'}!', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 4),
-                                Text('Level ${userData?['level'] ?? 1}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500)),
-                              ],
+        : RefreshIndicator(
+            onRefresh: _loadData, // Tarik layar ke bawah untuk refresh Leaderboard!
+            color: Colors.green,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // === HEADER DASHBOARD & LEVEL BAR ===
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 35, 
+                              backgroundColor: Colors.white, 
+                              backgroundImage: userData!['avatar_url'] != null && userData!['avatar_url'] != "" ? NetworkImage(userData!['avatar_url']) : null,
+                              child: userData!['avatar_url'] == null || userData!['avatar_url'] == "" ? const Icon(Icons.person, size: 40, color: Colors.green) : null,
                             ),
-                          )
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      // Bar Progress Level
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('${currentXp} XP', style: const TextStyle(color: Colors.white)),
-                          Text('100 XP ke Level ${((userData?['level'] ?? 1) + 1)}', style: const TextStyle(color: Colors.white)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: progress == 0 ? 0.05 : progress, // minimal ada isinya dikit
-                          minHeight: 12,
-                          backgroundColor: Colors.green[800],
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.orangeAccent),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Halo, ${userData?['nama_lengkap'] ?? 'Coder'}!', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 4),
+                                  Text('Level ${userData?['level'] ?? 1}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500)),
+                                ],
+                              ),
+                            )
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 20),
+                        // Bar Progress Level
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('${currentXp} XP', style: const TextStyle(color: Colors.white)),
+                            Text('100 XP ke Level ${((userData?['level'] ?? 1) + 1)}', style: const TextStyle(color: Colors.white)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(
+                            value: progress == 0 ? 0.05 : progress, 
+                            minHeight: 12,
+                            backgroundColor: Colors.green[800],
+                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.orangeAccent),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                
-                const SizedBox(height: 20),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Text('Leaderboard Top Coder 🏆', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(height: 10),
+                  
+                  const SizedBox(height: 20),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Text('Leaderboard Top Coder 🏆', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(height: 10),
 
-                // === LEADERBOARD (Tampilan Sementara) ===
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: 3, // Nanti diganti data asli dari backend
-                  itemBuilder: (context, index) {
-                    List<String> dummyNames = ["Darrell", "Gunadi Setiawan", "Elvan"];
-                    List<int> dummyLevels = [5, 1, 3];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: index == 0 ? Colors.amber : (index == 1 ? Colors.grey[400] : Colors.brown[300]),
-                        child: Text('${index + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
-                      title: Text(dummyNames[index], style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('Level ${dummyLevels[index]}'),
-                      trailing: const Icon(Icons.emoji_events, color: Colors.orange),
-                    );
-                  },
-                )
-              ],
+                  // === LEADERBOARD ASLI DARI MONGODB ===
+                  isLoading 
+                    ? const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator(color: Colors.green)))
+                    : leaderboard.isEmpty
+                        ? const Padding(padding: EdgeInsets.all(20), child: Center(child: Text('Belum ada data', style: TextStyle(color: Colors.grey))))
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: leaderboard.length,
+                            itemBuilder: (context, index) {
+                              final user = leaderboard[index];
+                              
+                              return Card(
+                                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: _getRankColor(index),
+                                    child: Text('${index + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ),
+                                  title: Text(user['nama_lengkap'] ?? 'Anonim', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: Text('Level ${user['level'] ?? 1} • ${user['total_xp'] ?? 0} XP', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+                                  trailing: user['avatar_url'] != null && user['avatar_url'] != "" 
+                                      ? CircleAvatar(backgroundImage: NetworkImage(user['avatar_url']), radius: 16)
+                                      : const Icon(Icons.person, color: Colors.grey),
+                                ),
+                              );
+                            },
+                          )
+                ],
+              ),
             ),
           ),
     );

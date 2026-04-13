@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../main.dart'; // Import main.dart untuk memanggil MainScreen
 import 'register_screen.dart'; 
+import 'admin_main_screen.dart'; // Import layar portal admin
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,11 +30,22 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Selamat datang, ${response['user']['nama_lengkap']}!'), backgroundColor: Colors.green),
       );
-      // Pindah ke layar MainScreen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
+      
+      // === LOGIKA BERCABANG: PENJAGA PINTU ===
+      if (response['user']['role'] == 'admin') {
+        // Jika statusnya Admin, buka Portal Admin
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminMainScreen()),
+        );
+      } else {
+        // Jika statusnya User Biasa, buka MainScreen (Dashboard biasa)
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      }
+      
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(response['message'] ?? 'Login Gagal'), backgroundColor: Colors.red),
