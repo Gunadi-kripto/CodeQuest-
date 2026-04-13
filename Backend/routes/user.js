@@ -164,4 +164,35 @@ router.get('/:userId/social', async (req, res) => {
     res.status(500).json({ message: 'Gagal mengambil data sosial.' });
   }
 });
+
+router.get('/leaderboard', async (req, res) => {
+  try {
+    // Ambil top 10 user dengan XP tertinggi
+    // sort({ total_xp: -1 }) artinya diurutkan menurun (Descending)
+    const topUsers = await User.find()
+      .sort({ total_xp: -1 })
+      .limit(10)
+      .select('nama_lengkap level total_xp avatar_url'); // Hanya ambil data yang perlu ditampilkan
+
+    res.status(200).json(topUsers);
+  } catch (error) {
+    console.error('Error Get Leaderboard:', error);
+    res.status(500).json({ message: 'Gagal mengambil data leaderboard.' });
+  }
+});
+
+router.get('/all-users', async (req, res) => {
+  try {
+    // Ambil semua data user, urutkan dari yang terbaru, dan SEMBUNYIKAN password
+    const users = await User.find()
+      .select('-password_hash') 
+      .sort({ created_at: -1 }); 
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error('Error Get All Users:', error);
+    res.status(500).json({ message: 'Gagal mengambil data seluruh pengguna.' });
+  }
+});
+
 module.exports = router;
