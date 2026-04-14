@@ -34,20 +34,21 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Hapus Paksa?', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-        content: Text('Apakah kamu yakin ingin menghapus akun "$userName" beserta seluruh datanya?'),
+        content: Text('Apakah kamu yakin ingin menghapus akun "$userName" selamanya?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal', style: TextStyle(color: Colors.grey))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
-              Navigator.pop(context); // Tutup dialog
-              setState(() => isLoading = true); // Tampilkan loading
+              Navigator.pop(context); 
+              setState(() => isLoading = true); 
               
-              bool success = await ApiService.deleteAccount(userId);
+              // MENGGUNAKAN JALUR KHUSUS ADMIN
+              bool success = await ApiService.adminDeleteUser(userId);
               
               if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Akun $userName berhasil dihapus.'), backgroundColor: Colors.green));
-                _loadUsers(); // Refresh daftar user
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Akun $userName berhasil ditendang.'), backgroundColor: Colors.green));
+                _loadUsers(); 
               } else {
                 setState(() => isLoading = false);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menghapus akun.'), backgroundColor: Colors.red));
@@ -64,7 +65,6 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      // Tidak perlu AppBar karena akan masuk ke dalam tab AdminMainScreen
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.green))
           : RefreshIndicator(

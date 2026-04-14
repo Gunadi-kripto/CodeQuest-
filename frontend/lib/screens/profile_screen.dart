@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'edit_profile_screen.dart';
-import 'social_screen.dart'; // Import layar teman yang akan kita buat
+import 'social_screen.dart'; 
+import 'achievement_screen.dart'; // Import layar lencana
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -32,7 +33,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Logika Cerdas untuk Bio Kosong
     String displayBio = 'Belum ada bio.';
     if (userData != null && userData!['bio'] != null && userData!['bio'].toString().trim().isNotEmpty) {
       displayBio = userData!['bio'];
@@ -77,7 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 
                 const SizedBox(height: 20),
                 
-                // TOMBOL ADD FRIEND / TEMAN
+                // === TOMBOL ADD FRIEND / TEMAN ===
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: ElevatedButton.icon(
@@ -97,6 +97,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
 
+                const SizedBox(height: 12),
+
+                // === TOMBOL ACHIEVEMENTS ===
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const AchievementScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.emoji_events, color: Colors.white),
+                    label: const Text('Pencapaian (Achievements)', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange, // Beda warna biar menarik
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
+                    ),
+                  ),
+                ),
+
                 const Padding(
                   padding: EdgeInsets.all(20.0),
                   child: Divider(),
@@ -104,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ListTile(
                   leading: const Icon(Icons.info_outline, color: Colors.green),
                   title: const Text('Bio', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(displayBio), // Menggunakan logika pintar di atas
+                  subtitle: Text(displayBio),
                 ),
                 ListTile(
                   leading: const Icon(Icons.email_outlined, color: Colors.green),

@@ -118,10 +118,36 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
     );
   }
 
-  // FUNGSI HAPUS KUIS
-  void _deleteQuiz(String id) async {
-    bool success = await ApiService.deleteQuiz(id);
-    if (success) _loadQuizzes();
+  // === FUNGSI KONFIRMASI HAPUS KUIS ===
+  void _confirmDeleteQuiz(String id, String pertanyaan) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Kuis?', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: Text('Yakin ingin menghapus kuis "$pertanyaan"? Tindakan ini tidak bisa dibatalkan.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal', style: TextStyle(color: Colors.grey))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context); // Tutup pop-up
+              setState(() => isLoading = true); // Tampilkan loading
+              
+              bool success = await ApiService.deleteQuiz(id);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kuis berhasil dihapus.'), backgroundColor: Colors.green));
+                _loadQuizzes(); // Segarkan layar
+              } else {
+                setState(() => isLoading = false);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menghapus kuis.'), backgroundColor: Colors.red));
+              }
+            },
+            child: const Text('Ya, Hapus', style: TextStyle(color: Colors.white)),
+          )
+        ],
+      ),
+    );
   }
 
   @override
@@ -184,7 +210,10 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _showQuizForm(quiz: quiz)),
-                                  IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteQuiz(quiz['_id'])),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red), 
+                                    onPressed: () => _confirmDeleteQuiz(quiz['_id'], quiz['pertanyaan'] ?? 'Tanpa Pertanyaan')
+                                  ),
                                 ],
                               ),
                             ),

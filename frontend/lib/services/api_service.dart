@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // PENTING: Gunakan 10.0.2.2 khusus untuk Android Emulator agar bisa mengakses localhost komputer
   static const String baseUrl = 'http://10.0.2.2:5000/api'; 
 
   // ==========================================
@@ -58,7 +57,6 @@ class ApiService {
     } catch (e) { return []; }
   }
 
-  // ---> INI YANG TADI SALAH, SUDAH DIPERBAIKI <---
   static Future<List<dynamic>> getQuizzes(String moduleId) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/quizzes/$moduleId'));
@@ -118,15 +116,22 @@ class ApiService {
     } catch (e) { return {'success': false, 'message': 'Gagal menghubungi server'}; }
   }
 
-  static Future<bool> deleteAccount(String userId) async {
+  // ---> FUNGSI HAPUS AKUN SUDAH PAKAI PASSWORD <---
+  static Future<Map<String, dynamic>> deleteAccount(String userId, String password) async {
     try {
-      final response = await http.delete(Uri.parse('$baseUrl/users/delete-account/$userId'));
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/delete-account/$userId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'password': password}),
+      );
+      final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        await logoutUser(); 
-        return true;
+        await logoutUser();
       }
-      return false;
-    } catch (e) { return false; }
+      return {'success': response.statusCode == 200, 'message': data['message']};
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal menghubungi server'};
+    }
   }
 
   // ==========================================
@@ -187,7 +192,7 @@ class ApiService {
   }
 
   // ==========================================
-  // FUNGSI ADMIN: KELOLA MATERI
+  // FUNGSI ADMIN: KELOLA MATERI & KUIS
   // ==========================================
   static Future<bool> addModule(String judul, String deskripsi, String isi) async {
     try {
@@ -218,9 +223,6 @@ class ApiService {
     } catch (e) { return false; }
   }
 
-  // ==========================================
-  // FUNGSI ADMIN: KELOLA KUIS
-  // ==========================================
   static Future<bool> addQuiz(String moduleId, String pertanyaan, String kunci, String hint, int xp) async {
     try {
       final res = await http.post(
@@ -249,4 +251,15 @@ class ApiService {
       return res.statusCode == 200;
     } catch (e) { return false; }
   }
+
+  // FUNGSI ADMIN: HAPUS USER PAKSA (TANPA PASSWORD)
+  static Future<bool> adminDeleteUser(String userId) async {
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/users/admin/force-delete/$userId'));
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+  
 }

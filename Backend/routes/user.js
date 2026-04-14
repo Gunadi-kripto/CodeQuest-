@@ -1,6 +1,7 @@
 // routes/user.js
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const { upload } = require('../config/cloudinary');
 
@@ -61,14 +62,25 @@ router.put('/update-profile/:userId', upload.single('avatar'), async (req, res) 
 });
 
 // API Hapus Akun
-router.delete('/delete-account/:userId', async (req, res) => {
+// Hapus Akun dengan Verifikasi Password
+router.post('/delete-account/:userId', async (req, res) => {
   try {
-    const { userId } = req.params;
-    await User.findByIdAndDelete(userId);
+    const { password } = req.body;
+    const user = await User.findById(req.params.userId);
+
+    if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
+
+    // Verifikasi password
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Password salah! Akun gagal dihapus.' });
+    }
+
+    await User.findByIdAndDelete(req.params.userId);
     res.status(200).json({ message: 'Akun berhasil dihapus selamanya.' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Gagal menghapus akun.' });
+    res.status(500).json({ message: 'Terjadi kesalahan server.' });
   }
 });
 
@@ -192,6 +204,17 @@ router.get('/all-users', async (req, res) => {
   } catch (error) {
     console.error('Error Get All Users:', error);
     res.status(500).json({ message: 'Gagal mengambil data seluruh pengguna.' });
+  }
+});
+
+// API ADMIN: HAPUS USER PAKSA 
+router.delete('/admin/force-delete/:userId', async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.userId);
+    res.status(200).json({ message: 'User berhasil dihapus paksa oleh Admin.' });
+  } catch (error) {
+    console.error('Error Force Delete:', error);
+    res.status(500).json({ message: 'Gagal menghapus user.' });
   }
 });
 
