@@ -6,9 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:5000/api'; 
 
-  // ==========================================
   // FUNGSI REGISTER & LOGIN
-  // ==========================================
   static Future<Map<String, dynamic>> registerUser(String nama, String email, String password) async {
     try {
       final response = await http.post(
@@ -46,9 +44,7 @@ class ApiService {
     await prefs.remove('user_data');
   }
 
-  // ==========================================
   // FUNGSI MATERI & KUIS (GET)
-  // ==========================================
   static Future<List<dynamic>> getModules() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/modules'));
@@ -65,9 +61,7 @@ class ApiService {
     } catch (e) { return []; }
   }
 
-  // ==========================================
   // FUNGSI PROFIL & XP
-  // ==========================================
   static Future<bool> addXp(String userId, int xpToAdd) async {
     try {
       final response = await http.post(
@@ -116,7 +110,7 @@ class ApiService {
     } catch (e) { return {'success': false, 'message': 'Gagal menghubungi server'}; }
   }
 
-  // ---> FUNGSI HAPUS AKUN SUDAH PAKAI PASSWORD <---
+  //  FUNGSI HAPUS AKUN SUDAH PAKAI PASSWORD 
   static Future<Map<String, dynamic>> deleteAccount(String userId, String password) async {
     try {
       final response = await http.post(
@@ -134,9 +128,7 @@ class ApiService {
     }
   }
 
-  // ==========================================
   // FUNGSI SOSIAL & LEADERBOARD
-  // ==========================================
   static Future<List<dynamic>> searchUsers(String query, String currentUserId) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/users/search?query=$query&currentUserId=$currentUserId'));
@@ -191,9 +183,7 @@ class ApiService {
     } catch (e) { return []; }
   }
 
-  // ==========================================
   // FUNGSI ADMIN: KELOLA MATERI & KUIS
-  // ==========================================
   static Future<bool> addModule(String judul, String deskripsi, String isi) async {
     try {
       final response = await http.post(

@@ -49,6 +49,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _selectedImage
     );
 
+    // Pastikan widget masih aktif sebelum update state
+    if (!mounted) return;
+
     setState(() => _isLoading = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -91,9 +94,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 return;
               }
 
-              Navigator.pop(context); // Tutup dialog input
+              // 1. Simpan Navigator sebelum proses 'await' (Solusi Anti-Error)
+              final nav = Navigator.of(context);
+
+              nav.pop(); // Tutup dialog input password
               
-              // Tampilkan loading memutar
+              // 2. Tampilkan loading memutar
               showDialog(
                 context: context, 
                 barrierDismissible: false,
@@ -102,13 +108,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
               String userId = widget.userData['id'] ?? widget.userData['_id'];
               
-              // Eksekusi fungsi hapus menggunakan password
+              // 3. Eksekusi fungsi hapus ke backend
               final res = await ApiService.deleteAccount(userId, passController.text);
               
+              // 4. Tutup loading memutarnya DULU
+              nav.pop();
+
+              // 5. Cek apakah layar masih aktif (Mencegah Deactivated Widget Error)
+              if (!mounted) return;
+
               if (res['success']) {
-                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
+                // Lempar ke layar Login
+                nav.pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
               } else {
-                Navigator.pop(context); // Tutup loading memutar jika gagal
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message']), backgroundColor: Colors.red));
               }
             },
@@ -137,24 +149,61 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 CircleAvatar(
                   radius: 60,
                   backgroundColor: Colors.green[100],
-                  backgroundImage: _selectedImage != null ? FileImage(_selectedImage!) as ImageProvider : (widget.userData['avatar_url'] != null && widget.userData['avatar_url'] != "" ? NetworkImage(widget.userData['avatar_url']) : null),
-                  child: _selectedImage == null && (widget.userData['avatar_url'] == null || widget.userData['avatar_url'] == "") ? const Icon(Icons.person, size: 60, color: Colors.green) : null,
+                  backgroundImage: _selectedImage != null 
+                      ? FileImage(_selectedImage!) as ImageProvider 
+                      : (widget.userData['avatar_url'] != null && widget.userData['avatar_url'] != "" 
+                          ? NetworkImage(widget.userData['avatar_url']) 
+                          : null),
+                  child: _selectedImage == null && (widget.userData['avatar_url'] == null || widget.userData['avatar_url'] == "") 
+                      ? const Icon(Icons.person, size: 60, color: Colors.green) 
+                      : null,
                 ),
-                Positioned(bottom: 0, right: 0, child: CircleAvatar(backgroundColor: Colors.green, child: IconButton(icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20), onPressed: _pickImage)))
+                Positioned(
+                  bottom: 0, 
+                  right: 0, 
+                  child: CircleAvatar(
+                    backgroundColor: Colors.green, 
+                    child: IconButton(
+                      icon: const Icon(Icons.camera_alt, color: Colors.white, size: 20), 
+                      onPressed: _pickImage
+                    )
+                  )
+                )
               ],
             ),
             const SizedBox(height: 32),
-            TextField(controller: _nameController, decoration: InputDecoration(labelText: 'Nama Lengkap', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)), prefixIcon: const Icon(Icons.person))),
+            TextField(
+              controller: _nameController, 
+              decoration: InputDecoration(
+                labelText: 'Nama Lengkap', 
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)), 
+                prefixIcon: const Icon(Icons.person)
+              )
+            ),
             const SizedBox(height: 20),
-            TextField(controller: _bioController, maxLines: 3, decoration: InputDecoration(labelText: 'Bio Singkat', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)), prefixIcon: const Padding(padding: EdgeInsets.only(bottom: 30), child: Icon(Icons.info)))),
+            TextField(
+              controller: _bioController, 
+              maxLines: 3, 
+              decoration: InputDecoration(
+                labelText: 'Bio Singkat', 
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)), 
+                prefixIcon: const Padding(padding: EdgeInsets.only(bottom: 30), child: Icon(Icons.info))
+              )
+            ),
             const SizedBox(height: 40),
             
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _saveProfile,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Simpan Perubahan', style: TextStyle(fontSize: 18, color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green, 
+                  padding: const EdgeInsets.symmetric(vertical: 16), 
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+                ),
+                child: _isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white) 
+                    : const Text('Simpan Perubahan', style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
             const SizedBox(height: 20),
