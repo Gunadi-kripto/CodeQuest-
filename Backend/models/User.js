@@ -1,7 +1,6 @@
 // models/User.js
 const mongoose = require('mongoose');
 
-// Membuat rancangan (blueprint) untuk data Pengguna
 const userSchema = new mongoose.Schema({
   nama_lengkap: { 
     type: String, 
@@ -10,15 +9,23 @@ const userSchema = new mongoose.Schema({
   email: { 
     type: String, 
     required: true, 
-    unique: true // Email tidak boleh ada yang sama
+    unique: true 
   },
+  // UBAH: password_hash tidak lagi wajib, karena user Google tidak punya password
   password_hash: { 
     type: String, 
-    required: true 
+    required: false 
+  },
+  // TAMBAH: Penanda login via Google
+  googleId: { 
+    type: String, 
+    required: false,
+    unique: true, // Opsional: pastikan 1 ID Google hanya untuk 1 akun
+    sparse: true  // Mengizinkan nilai null/undefined (untuk user manual)
   },
   avatar_url: { 
     type: String, 
-    default: "" // Kosong secara default sampai diisi dari Cloudinary
+    default: "" 
   },
   bio: { 
     type: String, 
@@ -26,7 +33,7 @@ const userSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    default: "user" // Defaultnya pengguna biasa, bukan admin
+    default: "user" 
   },
   total_xp: { 
     type: Number, 
@@ -34,7 +41,7 @@ const userSchema = new mongoose.Schema({
   },
   level: { 
     type: Number, 
-    default: 1 // Level awal selalu 1
+    default: 1 
   },
   achievement: { 
     type: Boolean, 
@@ -44,17 +51,12 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
   }],
-  
-  // Menyimpan daftar ID orang yang mengirimkan permintaan pertemanan ke kita
   friend_requests: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
   }]
-  
 }, {
-  // Otomatis membuat kolom created_at
   timestamps: { createdAt: 'created_at', updatedAt: false }
 });
 
-// Mengekspor model agar bisa dipakai di file lain
 module.exports = mongoose.model('User', userSchema);
