@@ -31,7 +31,6 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
 
   // FUNGSI FORM PINTAR (BISA TAMBAH / EDIT)
   void _showMateriForm({Map<String, dynamic>? module}) {
-    // Jika module tidak null, berarti kita sedang mode EDIT
     final bool isEdit = module != null;
     
     final TextEditingController judulController = TextEditingController(text: isEdit ? module['judul_modul'] : '');
@@ -81,10 +80,8 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                         
                         bool success;
                         if (isEdit) {
-                          // Eksekusi API Update
                           success = await ApiService.updateModule(module['_id'], judulController.text, deskripsiController.text, isiController.text);
                         } else {
-                          // Eksekusi API Tambah Baru
                           success = await ApiService.addModule(judulController.text, deskripsiController.text, isiController.text);
                         }
                         
@@ -149,7 +146,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showMateriForm(), // Panggil tanpa parameter = Tambah Baru
+        onPressed: () => _showMateriForm(),
         backgroundColor: Colors.green,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('Tambah Materi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -172,11 +169,11 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                         title: Text(mod['judul_modul'] ?? 'Tanpa Judul', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         subtitle: Text(mod['deskripsi'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
                         trailing: Row(
-                          mainAxisSize: MainAxisSize.min, // Agar ikon rapi di kanan
+                          mainAxisSize: MainAxisSize.min, 
                           children: [
                             IconButton(
                               icon: const Icon(Icons.edit, color: Colors.orange),
-                              onPressed: () => _showMateriForm(module: mod), // Panggil dengan parameter = Edit
+                              onPressed: () => _showMateriForm(module: mod), 
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),

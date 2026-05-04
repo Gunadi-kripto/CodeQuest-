@@ -1,14 +1,14 @@
+import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // PENTING: Gunakan 10.0.2.2 khusus untuk Android Emulator agar bisa mengakses localhost komputer
   static const String baseUrl = 'http://10.0.2.2:5000/api'; 
 
   // ==========================================
-  // FUNGSI REGISTER & LOGIN
+  // FUNGSI REGISTER & LOGIN MANUAL
   // ==========================================
   static Future<Map<String, dynamic>> registerUser(String nama, String email, String password) async {
     try {
@@ -45,6 +45,41 @@ class ApiService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token');
     await prefs.remove('user_data');
+
+    try {
+    await GoogleSignIn().signOut();
+    } catch (e) {
+    print('Gagal logout Google: $e');
+    }
+  }
+
+  // ==========================================
+  // FUNGSI LOGIN GOOGLE (OAUTH)
+  // ==========================================
+  static Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
+    try {
+      // Sekarang sudah memakai baseUrl utama ($baseUrl/auth/google)
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/google'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'idToken': idToken}),
+      );
+      
+      final data = jsonDecode(response.body);
+
+      // Jika berhasil, simpan token ke memori HP seperti login manual
+      if ((response.statusCode == 200 || response.statusCode == 201) && data['token'] != null) {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('jwt_token', data['token']);
+        await prefs.setString('user_data', jsonEncode(data['user']));
+      }
+
+      data['statusCode'] = response.statusCode;
+      return data;
+    } catch (e) {
+      print('Error kirim token ke backend: $e');
+      return {'message': 'Terjadi kesalahan koneksi saat login Google', 'statusCode': 500};
+    }
   }
 
   // ==========================================
@@ -58,7 +93,6 @@ class ApiService {
     } catch (e) { return []; }
   }
 
-  // ---> INI YANG TADI SALAH, SUDAH DIPERBAIKI <---
   static Future<List<dynamic>> getQuizzes(String moduleId) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/quizzes/$moduleId'));
@@ -118,15 +152,21 @@ class ApiService {
     } catch (e) { return {'success': false, 'message': 'Gagal menghubungi server'}; }
   }
 
-  static Future<bool> deleteAccount(String userId) async {
+  static Future<Map<String, dynamic>> deleteAccount(String userId, String password) async {
     try {
-      final response = await http.delete(Uri.parse('$baseUrl/users/delete-account/$userId'));
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/delete-account/$userId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'password': password}),
+      );
+      final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        await logoutUser(); 
-        return true;
+        await logoutUser();
       }
-      return false;
-    } catch (e) { return false; }
+      return {'success': response.statusCode == 200, 'message': data['message']};
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal menghubungi server'};
+    }
   }
 
   // ==========================================
@@ -187,7 +227,7 @@ class ApiService {
   }
 
   // ==========================================
-  // FUNGSI ADMIN: KELOLA MATERI
+  // FUNGSI ADMIN: KELOLA MATERI, KUIS & USER
   // ==========================================
   static Future<bool> addModule(String judul, String deskripsi, String isi) async {
     try {
@@ -218,9 +258,6 @@ class ApiService {
     } catch (e) { return false; }
   }
 
-  // ==========================================
-  // FUNGSI ADMIN: KELOLA KUIS
-  // ==========================================
   static Future<bool> addQuiz(String moduleId, String pertanyaan, String kunci, String hint, int xp) async {
     try {
       final res = await http.post(
@@ -248,5 +285,14 @@ class ApiService {
       final res = await http.delete(Uri.parse('$baseUrl/quizzes/$quizId'));
       return res.statusCode == 200;
     } catch (e) { return false; }
+  }
+
+  static Future<bool> adminDeleteUser(String userId) async {
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/users/admin/force-delete/$userId'));
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
   }
 }
