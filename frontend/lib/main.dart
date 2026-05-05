@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Wajib ada
+import 'dart:convert';
 
 // Import file layar
 import 'screens/home_screen.dart';
@@ -6,7 +8,7 @@ import 'screens/materi_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/quiz_list_screen.dart'; // Tambahkan baris ini
+import 'screens/quiz_list_screen.dart';
 
 void main() {
   runApp(const CodeQuestApp());
@@ -25,12 +27,70 @@ class CodeQuestApp extends StatelessWidget {
         primaryColor: Colors.green,
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
+      // UBAH INI: Arahkan ke SplashScreen, bukan LoginScreen
+      home: const SplashScreen(), 
     );
   }
 }
 
-// Widget untuk mengatur navigasi bawah
+// --- SEKSI PENGECEKAN SESI (AUTO LOGIN) ---
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    // Beri jeda sebentar (opsional) agar logo splash screen terlihat
+    await Future.delayed(const Duration(seconds: 2));
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userData = prefs.getString('user_data');
+
+    if (!mounted) return;
+
+    if (userData != null && userData.isNotEmpty) {
+      // Jika data user ada, langsung ke MainScreen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
+    } else {
+      // Jika kosong, ke LoginScreen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.green, // Sesuaikan dengan tema CodeQuest
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.code_rounded, size: 100, color: Colors.white),
+            SizedBox(height: 20),
+            CircularProgressIndicator(color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- WIDGET UTAMA (DENGAN NAVIGASI BAWAH) ---
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -41,7 +101,6 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  // Daftar halaman (Sudah dihapus kata 'const' agar tidak error)
   static final List<Widget> _widgetOptions = <Widget>[
     const HomeScreen(),
     const MateriScreen(),
