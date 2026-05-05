@@ -1,4 +1,3 @@
-// models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
@@ -11,18 +10,30 @@ const userSchema = new mongoose.Schema({
     required: true, 
     unique: true 
   },
-  // UBAH: password_hash tidak lagi wajib, karena user Google tidak punya password
   password_hash: { 
     type: String, 
     required: false 
   },
-  // TAMBAH: Penanda login via Google
   googleId: { 
     type: String, 
     required: false,
-    unique: true, // Opsional: pastikan 1 ID Google hanya untuk 1 akun
-    sparse: true  // Mengizinkan nilai null/undefined (untuk user manual)
+    unique: true, 
+    sparse: true  
   },
+  // === TAMBAHAN UNTUK SISTEM OTP ===
+  is_verified: {
+    type: Boolean,
+    default: false
+  },
+  otp: {
+    type: String,
+    default: null
+  },
+  otp_expires_at: {
+    type: Date,
+    default: null
+  },
+  // =================================
   avatar_url: { 
     type: String, 
     default: "" 

@@ -8,7 +8,7 @@ class ApiService {
   static const String baseUrl = 'http://10.0.2.2:5000/api'; 
 
   // ==========================================
-  // FUNGSI REGISTER & LOGIN MANUAL
+  // FUNGSI REGISTER & LOGIN
   // ==========================================
   static Future<Map<String, dynamic>> registerUser(String nama, String email, String password) async {
     try {
@@ -17,8 +17,8 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'nama_lengkap': nama, 'email': email, 'password': password}),
       );
-      return jsonDecode(response.body);
-    } catch (e) { return {'message': 'Gagal menghubungi server'}; }
+      return {'statusCode': response.statusCode, ...jsonDecode(response.body)};
+    } catch (e) { return {'statusCode': 500, 'message': 'Gagal menghubungi server'}; }
   }
 
   static Future<Map<String, dynamic>> loginUser(String email, String password) async {
@@ -35,7 +35,6 @@ class ApiService {
         await prefs.setString('jwt_token', data['token']);
         await prefs.setString('user_data', jsonEncode(data['user']));
       }
-
       data['statusCode'] = response.statusCode;
       return data;
     } catch (e) { return {'message': 'Gagal menghubungi server', 'statusCode': 500}; }
@@ -45,12 +44,54 @@ class ApiService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token');
     await prefs.remove('user_data');
+    try { await GoogleSignIn().signOut(); } catch (e) {}
+  }
 
+  // ==========================================
+  // FUNGSI OTP & LUPA PASSWORD
+  // ==========================================
+  static Future<Map<String, dynamic>> verifyRegisterOTP(String email, String otp) async {
     try {
-    await GoogleSignIn().signOut();
-    } catch (e) {
-    print('Gagal logout Google: $e');
-    }
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/verify-register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'otp': otp}),
+      );
+      return {'statusCode': response.statusCode, ...jsonDecode(response.body)};
+    } catch (e) { return {'statusCode': 500, 'message': 'Gagal server'}; }
+  }
+
+  static Future<Map<String, dynamic>> resendOTP(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/resend-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      return {'statusCode': response.statusCode, ...jsonDecode(response.body)};
+    } catch (e) { return {'statusCode': 500, 'message': 'Gagal server'}; }
+  }
+
+  static Future<Map<String, dynamic>> requestForgotPasswordOTP(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      return {'statusCode': response.statusCode, ...jsonDecode(response.body)};
+    } catch (e) { return {'statusCode': 500, 'message': 'Gagal server'}; }
+  }
+
+  static Future<Map<String, dynamic>> resetPasswordWithOTP(String email, String otp, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'otp': otp, 'newPassword': newPassword}),
+      );
+      return {'statusCode': response.statusCode, ...jsonDecode(response.body)};
+    } catch (e) { return {'statusCode': 500, 'message': 'Gagal server'}; }
   }
 
   // ==========================================
@@ -58,33 +99,23 @@ class ApiService {
   // ==========================================
   static Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
     try {
-      // Sekarang sudah memakai baseUrl utama ($baseUrl/auth/google)
       final response = await http.post(
         Uri.parse('$baseUrl/auth/google'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'idToken': idToken}),
       );
-      
       final data = jsonDecode(response.body);
-
-      // Jika berhasil, simpan token ke memori HP seperti login manual
       if ((response.statusCode == 200 || response.statusCode == 201) && data['token'] != null) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('jwt_token', data['token']);
         await prefs.setString('user_data', jsonEncode(data['user']));
       }
-
       data['statusCode'] = response.statusCode;
       return data;
-    } catch (e) {
-      print('Error kirim token ke backend: $e');
-      return {'message': 'Terjadi kesalahan koneksi saat login Google', 'statusCode': 500};
-    }
+    } catch (e) { return {'message': 'Kesalahan koneksi', 'statusCode': 500}; }
   }
 
-  // ==========================================
-  // FUNGSI MATERI & KUIS (GET)
-  // ==========================================
+  // (Fungsi Get Modules, Quiz, dll di bawah ini SAMA PERSIS seperti sebelumnya)
   static Future<List<dynamic>> getModules() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/modules'));
@@ -101,17 +132,9 @@ class ApiService {
     } catch (e) { return []; }
   }
 
-  // ==========================================
-  // FUNGSI PROFIL & XP
-  // ==========================================
   static Future<bool> addXp(String userId, int xpToAdd) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/add-xp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': userId, 'xpToAdd': xpToAdd}),
-      );
-
+      final response = await http.post(Uri.parse('$baseUrl/users/add-xp'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'userId': userId, 'xpToAdd': xpToAdd}));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -133,45 +156,27 @@ class ApiService {
       var request = http.MultipartRequest('PUT', Uri.parse('$baseUrl/users/update-profile/$userId'));
       request.fields['nama_lengkap'] = nama;
       request.fields['bio'] = bio;
-
-      if (imageFile != null) {
-        request.files.add(await http.MultipartFile.fromPath('avatar', imageFile.path));
-      }
-
+      if (imageFile != null) request.files.add(await http.MultipartFile.fromPath('avatar', imageFile.path));
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
       var data = jsonDecode(response.body);
-
       if (response.statusCode == 200) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_data', jsonEncode(data['user']));
         return {'success': true, 'message': data['message']};
-      } else {
-        return {'success': false, 'message': data['message'] ?? 'Gagal update profil'};
-      }
+      } else { return {'success': false, 'message': data['message'] ?? 'Gagal update profil'}; }
     } catch (e) { return {'success': false, 'message': 'Gagal menghubungi server'}; }
   }
 
   static Future<Map<String, dynamic>> deleteAccount(String userId, String password) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/delete-account/$userId'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'password': password}),
-      );
+      final response = await http.post(Uri.parse('$baseUrl/users/delete-account/$userId'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'password': password}));
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200) {
-        await logoutUser();
-      }
+      if (response.statusCode == 200) await logoutUser();
       return {'success': response.statusCode == 200, 'message': data['message']};
-    } catch (e) {
-      return {'success': false, 'message': 'Gagal menghubungi server'};
-    }
+    } catch (e) { return {'success': false, 'message': 'Gagal server'}; }
   }
 
-  // ==========================================
-  // FUNGSI SOSIAL & LEADERBOARD
-  // ==========================================
   static Future<List<dynamic>> searchUsers(String query, String currentUserId) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/users/search?query=$query&currentUserId=$currentUserId'));
@@ -182,24 +187,16 @@ class ApiService {
 
   static Future<Map<String, dynamic>> sendFriendRequest(String senderId, String targetId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/request-friend'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'senderId': senderId, 'targetId': targetId}),
-      );
+      final response = await http.post(Uri.parse('$baseUrl/users/request-friend'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'senderId': senderId, 'targetId': targetId}));
       return jsonDecode(response.body);
-    } catch (e) { return {'message': 'Gagal menghubungi server'}; }
+    } catch (e) { return {'message': 'Gagal server'}; }
   }
 
   static Future<Map<String, dynamic>> acceptFriendRequest(String userId, String senderId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/accept-friend'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': userId, 'senderId': senderId}),
-      );
+      final response = await http.post(Uri.parse('$baseUrl/users/accept-friend'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'userId': userId, 'senderId': senderId}));
       return jsonDecode(response.body);
-    } catch (e) { return {'message': 'Gagal menghubungi server'}; }
+    } catch (e) { return {'message': 'Gagal server'}; }
   }
 
   static Future<Map<String, dynamic>?> getSocialData(String userId) async {
@@ -226,27 +223,16 @@ class ApiService {
     } catch (e) { return []; }
   }
 
-  // ==========================================
-  // FUNGSI ADMIN: KELOLA MATERI, KUIS & USER
-  // ==========================================
   static Future<bool> addModule(String judul, String deskripsi, String isi) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/modules'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'judul_modul': judul, 'deskripsi': deskripsi, 'materi_isi': isi}),
-      );
+      final response = await http.post(Uri.parse('$baseUrl/modules'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'judul_modul': judul, 'deskripsi': deskripsi, 'materi_isi': isi}));
       return response.statusCode == 201;
     } catch (e) { return false; }
   }
 
   static Future<bool> updateModule(String id, String judul, String deskripsi, String isi) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/modules/$id'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'judul_modul': judul, 'deskripsi': deskripsi, 'materi_isi': isi}),
-      );
+      final response = await http.put(Uri.parse('$baseUrl/modules/$id'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'judul_modul': judul, 'deskripsi': deskripsi, 'materi_isi': isi}));
       return response.statusCode == 200;
     } catch (e) { return false; }
   }
@@ -260,22 +246,14 @@ class ApiService {
 
   static Future<bool> addQuiz(String moduleId, String pertanyaan, String kunci, String hint, int xp) async {
     try {
-      final res = await http.post(
-        Uri.parse('$baseUrl/quizzes'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'module_id': moduleId, 'pertanyaan': pertanyaan, 'kunci_jawaban': kunci, 'hint': hint, 'xp_reward': xp}),
-      );
+      final res = await http.post(Uri.parse('$baseUrl/quizzes'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'module_id': moduleId, 'pertanyaan': pertanyaan, 'kunci_jawaban': kunci, 'hint': hint, 'xp_reward': xp}));
       return res.statusCode == 201;
     } catch (e) { return false; }
   }
 
   static Future<bool> updateQuiz(String quizId, String pertanyaan, String kunci, String hint, int xp) async {
     try {
-      final res = await http.put(
-        Uri.parse('$baseUrl/quizzes/$quizId'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'pertanyaan': pertanyaan, 'kunci_jawaban': kunci, 'hint': hint, 'xp_reward': xp}),
-      );
+      final res = await http.put(Uri.parse('$baseUrl/quizzes/$quizId'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'pertanyaan': pertanyaan, 'kunci_jawaban': kunci, 'hint': hint, 'xp_reward': xp}));
       return res.statusCode == 200;
     } catch (e) { return false; }
   }
@@ -291,8 +269,6 @@ class ApiService {
     try {
       final response = await http.delete(Uri.parse('$baseUrl/users/admin/force-delete/$userId'));
       return response.statusCode == 200;
-    } catch (e) {
-      return false;
-    }
+    } catch (e) { return false; }
   }
 }
