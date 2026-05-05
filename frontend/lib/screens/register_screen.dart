@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -10,7 +12,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  
   bool _isLoading = false;
+  
+  // === STATE UNTUK PASSWORD ===
+  bool _isPasswordValid = false;
+  String? _passwordErrorText; 
+  bool _obscurePassword = true; // State untuk fitur Mata (Show/Hide)
+
+  // Fungsi mengecek kekuatan password secara Real-Time
+  void _validatePassword(String value) {
+    // Regex Baru: Semua simbol (termasuk +, -, =) sekarang diizinkan!
+    RegExp regex = RegExp(r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[^a-zA-Z0-9]).{8,}$');
+    
+    setState(() {
+      if (value.isEmpty) {
+        _passwordErrorText = 'Password tidak boleh kosong';
+        _isPasswordValid = false;
+      } else if (!regex.hasMatch(value)) {
+        _passwordErrorText = 'Min 8 karakter, kombinasi huruf besar, kecil, angka, & simbol';
+        _isPasswordValid = false;
+      } else {
+        _passwordErrorText = null; // Password Kuat!
+        _isPasswordValid = true;
+      }
+    });
+  }
 
   void _showOTPDialog(String email) {
     final TextEditingController otpController = TextEditingController();
@@ -81,14 +108,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _register() async {
-    // === PENJAGA GERBANG: Validasi Kolom Kosong ===
     if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semua kolom wajib diisi!'), backgroundColor: Colors.red),
-      );
-      return; // Stop proses di sini, jangan hubungi backend
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Semua kolom wajib diisi!'), backgroundColor: Colors.red));
+      return; 
     }
-    // ===============================================
+    
+    if (!_isPasswordValid) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password belum memenuhi standar keamanan!'), backgroundColor: Colors.red));
+      return;
+    }
 
     setState(() => _isLoading = true);
     
@@ -98,13 +126,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = false);
 
-    // Backend mungkin mengembalikan 200 atau 201 untuk sukses
     if (response['statusCode'] == 200 || response['statusCode'] == 201) {
-      _showOTPDialog(_emailController.text); // Munculkan dialog OTP
+      _showOTPDialog(_emailController.text); 
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? 'Terjadi kesalahan'), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response['message'] ?? 'Terjadi kesalahan'), backgroundColor: Colors.red));
     }
   }
 
@@ -124,15 +149,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const Text('Buat akun CodeQuest sekarang.', style: TextStyle(fontSize: 16, color: Colors.grey)),
               const SizedBox(height: 40),
               
-              TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Nama Lengkap', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person))),
+              TextField(
+                controller: _nameController, 
+                decoration: const InputDecoration(labelText: 'Nama Lengkap', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person))
+              ),
               const SizedBox(height: 16),
-              TextField(controller: _emailController, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email))),
+              
+              TextField(
+                controller: _emailController, 
+                keyboardType: TextInputType.emailAddress, 
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email))
+              ),
               const SizedBox(height: 16),
-              TextField(controller: _passwordController, obscureText: true, decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder(), prefixIcon: Icon(Icons.lock))),
+              
+              // === TEXTFIELD PASSWORD DENGAN FITUR MATA ===
+              TextField(
+                controller: _passwordController, 
+                obscureText: _obscurePassword, // Dikontrol oleh variabel
+                onChanged: _validatePassword, 
+                decoration: InputDecoration(
+                  labelText: 'Password Kuat', 
+                  border: const OutlineInputBorder(), 
+                  prefixIcon: const Icon(Icons.lock),
+                  errorText: _passwordErrorText, 
+                  errorMaxLines: 2,
+                  suffixIcon: IconButton( // Tombol Mata
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword; // Toggle on/off
+                      });
+                    },
+                  ),
+                )
+              ),
               const SizedBox(height: 32),
               
               ElevatedButton(
-                onPressed: _isLoading ? null : _register,
+                onPressed: _isLoading || !_isPasswordValid ? null : _register,
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(vertical: 16)),
                 child: _isLoading 
                   ? const CircularProgressIndicator(color: Colors.white) 

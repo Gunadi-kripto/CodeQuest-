@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'edit_profile_screen.dart';
 import 'social_screen.dart'; 
-import 'achievement_screen.dart'; // Import layar lencana
+import 'achievement_screen.dart'; 
+import 'login_screen.dart'; // Wajib import layar login untuk rute logout
+import '../services/api_service.dart'; // Wajib import ApiService untuk eksekusi logout
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -31,6 +33,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // === FUNGSI KONFIRMASI LOGOUT ===
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text('Konfirmasi Logout', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: const Text('Yakin ingin logout dari akun ini?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), // Tutup pop-up jika batal
+            child: const Text('Tidak', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context); // Tutup pop-up
+              
+              // Tampilkan loading memutar agar terlihat ada proses
+              showDialog(
+                context: context, 
+                barrierDismissible: false,
+                builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.green))
+              );
+
+              // Eksekusi fungsi logout di backend/lokal
+              await ApiService.logoutUser();
+              
+              // Cek apakah widget masih aktif sebelum pindah layar
+              if (mounted) {
+                // Lempar kembali ke LoginScreen dan hapus semua riwayat layar sebelumnya
+                Navigator.pushAndRemoveUntil(
+                  context, 
+                  MaterialPageRoute(builder: (context) => const LoginScreen()), 
+                  (route) => false
+                );
+              }
+            },
+            child: const Text('Ya', style: TextStyle(color: Colors.white)),
+          )
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     String displayBio = 'Belum ada bio.';
@@ -47,13 +94,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
+            tooltip: 'Edit Profil',
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => EditProfileScreen(userData: userData!)),
               ).then((_) => _loadUserData());
             },
-          )
+          ),
+          // === TOMBOL LOGOUT DIPINDAH KE SINI ===
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            tooltip: 'Logout',
+            onPressed: _confirmLogout,
+          ),
         ],
       ),
       body: userData == null
@@ -112,7 +166,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: const Icon(Icons.emoji_events, color: Colors.white),
                     label: const Text('Pencapaian (Achievements)', style: TextStyle(color: Colors.white, fontSize: 16)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange, // Beda warna biar menarik
+                      backgroundColor: Colors.orange, 
                       minimumSize: const Size(double.infinity, 50),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
                     ),

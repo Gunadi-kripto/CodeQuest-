@@ -21,6 +21,9 @@ const moduleRoutes = require('./routes/module');
 const quizRoutes = require('./routes/quiz');
 const userRoutes = require('./routes/user');
 
+const achievementRoutes = require('./routes/achievement'); 
+app.use('/api/achievements', achievementRoutes);           
+
 app.use('/api/modules', moduleRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/users', userRoutes);
