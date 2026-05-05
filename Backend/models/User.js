@@ -54,10 +54,18 @@ const userSchema = new mongoose.Schema({
     type: Number, 
     default: 1 
   },
-  achievement: { 
-    type: Boolean, 
-    default: false 
+  total_materi_dibaca: { 
+    type: Number, 
+    default: 0 
   },
+  total_kuis_selesai: { 
+    type: Number, 
+    default: 0 
+  },
+  unlocked_achievements: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Achievement' 
+  }],
   friends: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 

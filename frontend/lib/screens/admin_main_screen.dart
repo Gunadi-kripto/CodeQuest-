@@ -4,8 +4,8 @@ import 'login_screen.dart';
 import 'admin_manage_users.dart';
 import 'admin_manage_materi.dart';
 import 'admin_manage_kuis.dart';
+import 'admin_manage_achievements.dart'; // IMPORT LAYAR BARU
 
-// Sementara kita taruh layar dummy di sini, nanti kita pecah jadi file-file terpisah
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
 
@@ -16,11 +16,12 @@ class AdminMainScreen extends StatefulWidget {
 class _AdminMainScreenState extends State<AdminMainScreen> {
   int _selectedIndex = 0;
 
-  // Daftar halaman khusus Admin (Nanti kita isi dengan form beneran)
+  // DAFTAR LAYAR DITAMBAH SATU
   static final List<Widget> _widgetOptions = <Widget>[
     const AdminManageUsers(),
     const AdminManageMateri(),
     const AdminManageKuis(),
+    const AdminManageAchievements(), 
   ];
 
   void _onItemTapped(int index) {
@@ -45,7 +46,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Portal Admin', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.green, // Kembali ke Hijau CodeQuest!
+        backgroundColor: Colors.green,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.white), 
@@ -56,15 +57,17 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       ),
       body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
+        // === MENU DI BAWAH DITAMBAH ===
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
           BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Materi'),
           BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Kuis'),
+          BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Piala'), // TAB BARU
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.green, // Icon menu yang aktif juga jadi hijau
+        selectedItemColor: Colors.green, 
         unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
+        type: BottomNavigationBarType.fixed, 
         onTap: _onItemTapped,
       ),
     );
