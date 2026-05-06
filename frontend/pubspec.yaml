@@ -53,6 +53,15 @@ dev_dependencies:
   # === TAMBAHAN UNTUK GANTI IKON ===
   flutter_launcher_icons: ^0.13.1
 
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon.png" # Gunakan path relatif, BUKAN path Windows (C:\...)
+  
+  # Setingan Android agar gambarnya masuk dengan sempurna di dalam bulatan
+  adaptive_icon_background: "#FFFFFF" 
+  adaptive_icon_foreground: "assets/app_icon.png"
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
