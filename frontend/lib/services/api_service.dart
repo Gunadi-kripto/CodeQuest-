@@ -274,4 +274,26 @@ class ApiService {
       return res.statusCode == 200;
     } catch (e) { return false; }
   }
+
+  static Future<Map<String, dynamic>> rejectFriendRequest(String userId, String senderId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/reject-friend'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': userId, 'senderId': senderId})
+      );
+      return jsonDecode(response.body);
+    } catch (e) { return {'message': 'Gagal server'}; }
+  }
+
+  static Future<Map<String, dynamic>> removeFriend(String userId, String friendId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/remove-friend'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': userId, 'friendId': friendId})
+      );
+      return jsonDecode(response.body);
+    } catch (e) { return {'message': 'Gagal server'}; }
+  }
 }

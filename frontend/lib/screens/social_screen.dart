@@ -46,13 +46,48 @@ class _SocialScreenState extends State<SocialScreen> {
 
   void _sendRequest(String targetId) async {
     final res = await ApiService.sendFriendRequest(widget.currentUserId, targetId);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
   }
 
   void _acceptRequest(String senderId) async {
     final res = await ApiService.acceptFriendRequest(widget.currentUserId, senderId);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
     _loadSocialData(); // Refresh list setelah menerima
+  }
+
+  // === FUNGSI BARU: TOLAK TEMAN ===
+  void _rejectRequest(String senderId) async {
+    final res = await ApiService.rejectFriendRequest(widget.currentUserId, senderId);
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
+    _loadSocialData(); // Refresh list setelah menolak
+  }
+
+  // === FUNGSI BARU: KONFIRMASI HAPUS TEMAN ===
+  void _confirmRemoveFriend(String friendId, String friendName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text('Hapus Pertemanan?', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: Text('Yakin ingin menghapus $friendName dari daftar temanmu?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), 
+            child: const Text('Batal', style: TextStyle(color: Colors.grey))
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context); // Tutup dialog
+              final res = await ApiService.removeFriend(widget.currentUserId, friendId);
+              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
+              _loadSocialData(); // Refresh UI
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          )
+        ],
+      ),
+    );
   }
 
   // === FUNGSI MENAMPILKAN POPUP DETAIL TEMAN (TARGET 2) ===
@@ -170,7 +205,18 @@ class _SocialScreenState extends State<SocialScreen> {
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
                         itemCount: friends.length,
-                        itemBuilder: (context, index) => _buildUserCard(friends[index]),
+                        itemBuilder: (context, index) {
+                          final friend = friends[index];
+                          return _buildUserCard(
+                            friend,
+                            // Tambah Icon Tong Sampah untuk hapus teman
+                            trailingAction: IconButton(
+                              icon: const Icon(Icons.person_remove, color: Colors.red),
+                              onPressed: () => _confirmRemoveFriend(friend['_id'], friend['nama_lengkap']),
+                              tooltip: 'Hapus Teman',
+                            ),
+                          );
+                        },
                       ),
                   
                   // TAB 2: PERMINTAAN MASUK
@@ -183,11 +229,23 @@ class _SocialScreenState extends State<SocialScreen> {
                           final reqUser = requests[index];
                           return _buildUserCard(
                             reqUser,
-                            trailingAction: ElevatedButton(
-                              onPressed: () => _acceptRequest(reqUser['_id']),
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                              child: const Text('Terima', style: TextStyle(color: Colors.white)),
-                            )
+                            trailingAction: Row(
+                              mainAxisSize: MainAxisSize.min, // Biar tombolnya gak makan tempat
+                              children: [
+                                // Tombol Silang (Tolak)
+                                IconButton(
+                                  icon: const Icon(Icons.close, color: Colors.red),
+                                  onPressed: () => _rejectRequest(reqUser['_id']),
+                                  tooltip: 'Tolak',
+                                ),
+                                // Tombol Terima
+                                ElevatedButton(
+                                  onPressed: () => _acceptRequest(reqUser['_id']),
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                                  child: const Text('Terima', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
                           );
                         },
                       ),
@@ -221,6 +279,7 @@ class _SocialScreenState extends State<SocialScreen> {
                                     trailingAction: IconButton(
                                       icon: const Icon(Icons.person_add_alt_1, color: Colors.green),
                                       onPressed: () => _sendRequest(searchUser['_id']),
+                                      tooltip: 'Tambah Teman',
                                     )
                                   );
                                 },

@@ -5,9 +5,7 @@ const User = require('../models/User');
 const Achievement = require('../models/Achievement'); 
 const { upload } = require('../config/cloudinary');
 
-// =========================================================
 // API untuk Menambah XP & TRIGGER ACHIEVEMENT
-// =========================================================
 router.post('/add-xp', async (req, res) => {
   try {
     const { userId, xpToAdd } = req.body;
@@ -37,17 +35,8 @@ router.post('/add-xp', async (req, res) => {
     }
 
     await user.save();
-    
-    res.status(200).json({ 
-      message: 'XP berhasil ditambahkan!', 
-      total_xp: user.total_xp, 
-      level: user.level,
-      new_achievements: newlyUnlocked 
-    });
-  } catch (error) {
-    console.error('Error Add XP:', error);
-    res.status(500).json({ message: 'Gagal menambahkan XP.' });
-  }
+    res.status(200).json({ message: 'XP berhasil ditambahkan!', total_xp: user.total_xp, level: user.level, new_achievements: newlyUnlocked });
+  } catch (error) { res.status(500).json({ message: 'Gagal menambahkan XP.' }); }
 });
 
 // API Get Profil Spesifik
@@ -55,9 +44,7 @@ router.get('/profile/:userId', async (req, res) => {
   try {
     const user = await User.findById(req.params.userId);
     res.status(200).json(user);
-  } catch(e) { 
-    res.status(500).json({message: 'Gagal mengambil profil'}); 
-  }
+  } catch(e) { res.status(500).json({message: 'Gagal mengambil profil'}); }
 });
 
 // API Update Profil
@@ -72,35 +59,23 @@ router.put('/update-profile/:userId', upload.single('avatar'), async (req, res) 
   } catch (error) { res.status(500).json({ message: 'Gagal memperbarui profil.' }); }
 });
 
-// =========================================================
 // API HAPUS AKUN (DENGAN BYPASS GOOGLE)
-// =========================================================
 router.post('/delete-account/:userId', async (req, res) => {
   try {
     const { password } = req.body;
     const user = await User.findById(req.params.userId);
-    
     if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
-    // Cek apakah ini Akun Google (tidak punya password_hash / ada googleId)
     if (!user.password_hash || user.googleId) {
-      if (password !== 'HAPUS') {
-        return res.status(400).json({ message: 'Ini adalah akun Google. Ketik kata "HAPUS" untuk mengonfirmasi.' });
-      }
+      if (password !== 'HAPUS') return res.status(400).json({ message: 'Ini adalah akun Google. Ketik kata "HAPUS" untuk mengonfirmasi.' });
     } else {
-      // Jika akun biasa, cek password
       const isMatch = await bcrypt.compare(password, user.password_hash);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Password salah! Akun gagal dihapus.' });
-      }
+      if (!isMatch) return res.status(400).json({ message: 'Password salah! Akun gagal dihapus.' });
     }
 
     await User.findByIdAndDelete(req.params.userId);
     res.status(200).json({ message: 'Akun berhasil dihapus selamanya.' });
-  } catch (error) { 
-    console.error(error);
-    res.status(500).json({ message: 'Terjadi kesalahan server.' }); 
-  }
+  } catch (error) { res.status(500).json({ message: 'Terjadi kesalahan server.' }); }
 });
 
 // Cari Pengguna - TANPA ADMIN
@@ -138,6 +113,38 @@ router.post('/accept-friend', async (req, res) => {
     await sender.save();
     res.status(200).json({ message: 'Permintaan diterima! Kalian sekarang berteman.' });
   } catch (error) { res.status(500).json({ message: 'Gagal menerima pertemanan.' }); }
+});
+
+// ==========================================
+// API BARU: TOLAK PERMINTAAN TEMAN
+// ==========================================
+router.post('/reject-friend', async (req, res) => {
+  try {
+    const { userId, senderId } = req.body;
+    const user = await User.findById(userId);
+    user.friend_requests = user.friend_requests.filter(id => id.toString() !== senderId);
+    await user.save();
+    res.status(200).json({ message: 'Permintaan pertemanan ditolak.' });
+  } catch (error) { res.status(500).json({ message: 'Gagal menolak permintaan.' }); }
+});
+
+// ==========================================
+// API BARU: HAPUS TEMAN (UNFRIEND)
+// ==========================================
+router.post('/remove-friend', async (req, res) => {
+  try {
+    const { userId, friendId } = req.body;
+    const user = await User.findById(userId);
+    const friend = await User.findById(friendId);
+
+    // Hapus ID masing-masing dari daftar teman
+    user.friends = user.friends.filter(id => id.toString() !== friendId);
+    friend.friends = friend.friends.filter(id => id.toString() !== userId);
+
+    await user.save();
+    await friend.save();
+    res.status(200).json({ message: 'Berhasil menghapus pertemanan.' });
+  } catch (error) { res.status(500).json({ message: 'Gagal menghapus pertemanan.' }); }
 });
 
 // Ambil Daftar Teman
