@@ -159,7 +159,79 @@ class ApiService {
     } catch (e) { return []; }
   }
 
+  // ==========================================
+  // FUNGSI BAHASA (LANGUAGE) - BARU DITAMBAHKAN
+  // ==========================================
+  
+  static Future<List<dynamic>> getLanguages() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/languages'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) {
+      print('Error fetch languages: $e');
+      return [];
+    }
+  }
+
+  static Future<Map<String, dynamic>> addLanguage(String namaBahasa, String warnaTema, File iconFile) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/languages'));
+      request.fields['nama_bahasa'] = namaBahasa;
+      request.fields['warna_tema'] = warnaTema;
+      request.files.add(await http.MultipartFile.fromPath('icon_file', iconFile.path));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      var data = jsonDecode(response.body);
+
+      if (response.statusCode == 201) {
+        return {'success': true, 'message': data['message'] ?? 'Berhasil'};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Gagal menambah bahasa'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal server: $e'};
+    }
+  }
+
+  // ==========================================
   // FUNGSI MATERI, KUIS, & XP
+  // ==========================================
+  // AMBIL MATERI BERDASARKAN BAHASA
+  static Future<List<dynamic>> getModulesByLanguage(String idBahasa) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/modules/bahasa/$idBahasa'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) { return []; }
+  }
+
+  // TAMBAH MATERI BARU (MENDUKUNG UPLOAD GAMBAR)
+  static Future<Map<String, dynamic>> addModuleWithLanguage(
+    String idBahasa, String judul, String deskripsi, String tipe, String textContent, File? imageFile
+  ) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/modules'));
+      request.fields['id_bahasa'] = idBahasa;
+      request.fields['judul_modul'] = judul;
+      request.fields['deskripsi'] = deskripsi;
+      request.fields['tipe'] = tipe;
+      
+      if (tipe == 'text') {
+        request.fields['materi_teks'] = textContent;
+      } else if (tipe == 'image' && imageFile != null) {
+        request.files.add(await http.MultipartFile.fromPath('materi_file', imageFile.path));
+      }
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 201) return {'success': true};
+      return {'success': false, 'message': 'Gagal menyimpan materi'};
+    } catch (e) { return {'success': false, 'message': 'Error server: $e'}; }
+  }
+
   static Future<List<dynamic>> getModules() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/modules'));

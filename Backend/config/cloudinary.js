@@ -11,8 +11,9 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'CodeQuest_Avatars',
-    allowed_formats: ['jpg', 'png', 'jpeg'],
+    folder: 'CodeQuest_Content', // Nama folder general atau bisa dinamis
+    resource_type: 'auto',       // KRUSIAL: Agar bisa upload Video & Gambar
+    allowed_formats: ['jpg', 'png', 'jpeg', 'mp4', 'mov', 'avi'],
   },
 });
 

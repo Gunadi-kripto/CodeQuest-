@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
 import 'admin_manage_users.dart';
-import 'admin_manage_materi.dart';
+import 'admin_language_screen.dart'; // ✅ IMPORT DIUBAH KE SINI
 import 'admin_manage_kuis.dart';
-import 'admin_manage_achievements.dart'; // IMPORT LAYAR BARU
+import 'admin_manage_achievements.dart';
 
 class AdminMainScreen extends StatefulWidget {
   const AdminMainScreen({super.key});
@@ -16,10 +16,10 @@ class AdminMainScreen extends StatefulWidget {
 class _AdminMainScreenState extends State<AdminMainScreen> {
   int _selectedIndex = 0;
 
-  // DAFTAR LAYAR DITAMBAH SATU
+  // DAFTAR LAYAR
   static final List<Widget> _widgetOptions = <Widget>[
     const AdminManageUsers(),
-    const AdminManageMateri(),
+    const AdminLanguageScreen(), // ✅ DIGANTI MENJADI HALAMAN "BAPAK" (GRID BAHASA)
     const AdminManageKuis(),
     const AdminManageAchievements(), 
   ];
@@ -57,12 +57,11 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       ),
       body: _widgetOptions.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
-        // === MENU DI BAWAH DITAMBAH ===
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
           BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Materi'),
           BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Kuis'),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Piala'), // TAB BARU
+          BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Piala'), 
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.green, 
