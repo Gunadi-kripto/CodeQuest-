@@ -3,17 +3,11 @@ const router = express.Router();
 const Message = require('../models/Message');
 const User = require('../models/User');
 
-// Kamus Filter Kata Kasar (Silakan tambahin sendiri kalau kurang)
-const badWords = ['anjing', 'babi', 'bangsat', 'goblok', 'tolol', 'bego'];
+// === IMPORT KEDUA LIBRARY SENSOR ===
+const Filter = require('bad-words'); // Sensor Bahasa Inggris (Versi Stabil)
+const indoBadwords = require('indonesian-badwords'); // Sensor Bahasa Indonesia (Bisa baca huruf alay)
 
-function censorText(text) {
-  let censored = text;
-  badWords.forEach(word => {
-    const regex = new RegExp(word, 'gi');
-    censored = censored.replace(regex, '***');
-  });
-  return censored;
-}
+const filter = new Filter(); 
 
 // 1. API Kirim Pesan
 router.post('/send', async (req, res) => {
@@ -35,8 +29,13 @@ router.post('/send', async (req, res) => {
       return res.status(403).json({ message: 'Limit harian chat telah Habis silakan tunggu besok hari' });
     }
 
-    // Filter Kata Kasar & Simpan Pesan
-    const cleanText = censorText(text);
+    // === PROSES SENSOR GANDA (ENGLISH + INDO) ===
+    // 1. Bersihkan kata bahasa Inggris (fuck, shit, dll)
+    let cleanText = filter.clean(text);
+    // 2. Bersihkan kata bahasa Indonesia (anjing, 4nj1ng, dll)
+    cleanText = indoBadwords.censor(cleanText);
+
+    // Simpan pesan yang sudah disensor ke database
     const newMessage = new Message({ senderId, receiverId, text: cleanText });
     await newMessage.save();
 
