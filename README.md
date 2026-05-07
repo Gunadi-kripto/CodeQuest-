@@ -1,3 +1,3 @@
 # CodeQuest-
-buat env
-trs npm init -y di folder backend
+buat env di backend, npm install, nodemon server.js
+pindah folder frontend flutter pub get, flutter run
