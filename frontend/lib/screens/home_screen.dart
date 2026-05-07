@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,10 +19,39 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> leaderboard = [];
   bool isLoading = true;
 
+  // Data Quest untuk Slider
+  final List<Map<String, String>> _allQuests = [
+    {'title': 'Misi Harian:\nPython Loop', 'image': 'assets/python.png'},
+    {'title': 'Misi Harian:\nJava Variable', 'image': 'assets/java.png'},
+    {'title': 'Misi Harian:\nC++ Basics', 'image': 'assets/cpp.png'},
+    {'title': 'Misi Harian:\nHTML Tags', 'image': 'assets/html.png'},
+  ];
+
+  int _questIndex = 0;
+  Timer? _timer;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _startQuestTimer();
+  }
+
+  // Logika Timer 5 Detik
+  void _startQuestTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted) {
+        setState(() {
+          _questIndex = (_questIndex + 1) % _allQuests.length;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // Mencegah memory leak
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -44,13 +74,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _logout() async {
     await ApiService.logoutUser();
-
     if (mounted) {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (context) => const LoginScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
         (route) => false,
       );
     }
@@ -64,9 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: userData == null || isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.green),
-            )
+          ? const Center(child: CircularProgressIndicator(color: Colors.green))
           : RefreshIndicator(
               onRefresh: _loadData,
               color: Colors.green,
@@ -75,24 +100,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ================= HEADER =================
                     _buildHeader(currentXp, progress),
-
                     const SizedBox(height: 20),
-
-                    // ================= LANJUT BELAJAR =================
                     _buildContinueLearning(),
-
                     const SizedBox(height: 25),
-
-                    // ================= CURRENT QUESTS =================
                     _buildCurrentQuests(),
-
                     const SizedBox(height: 25),
-
-                    // ================= PERINGKAT MINGGUAN =================
                     _buildWeeklyLeaderboard(),
-
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -101,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= WIDGET HEADER =================
+  // ================= HEADER =================
   Widget _buildHeader(int currentXp, double progress) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
@@ -144,10 +158,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(width: 10),
                         const Icon(Icons.local_fire_department, color: Colors.orangeAccent, size: 18),
-                        const Text(
-                          ' Streak: 7 Hari', // Statis/Placeholder, bisa diganti jika ada API streak
-                          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-                        ),
                       ],
                     ),
                   ],
@@ -181,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= WIDGET LANJUT BELAJAR =================
+  // ================= LANJUT BELAJAR =================
   Widget _buildContinueLearning() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -219,8 +229,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= WIDGET CURRENT QUESTS =================
+  // ================= CURRENT QUESTS (DENGAN EFEK GESER) =================
   Widget _buildCurrentQuests() {
+    final firstQuest = _allQuests[_questIndex];
+    final secondQuest = _allQuests[(_questIndex + 1) % _allQuests.length];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -229,15 +242,35 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Text('Current Quests', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(height: 15),
-        SizedBox(
-          height: 160,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
             children: [
-              _buildQuestCard('Misi Harian:\nPython Loop', 'assets/python.png'),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 800),
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    return SlideTransition(
+                      position: Tween<Offset>(begin: const Offset(1.2, 0.0), end: Offset.zero).animate(animation),
+                      child: FadeTransition(opacity: animation, child: child),
+                    );
+                  },
+                  child: _buildQuestCard(firstQuest['title']!, firstQuest['image']!, key: ValueKey('q1_$_questIndex')),
+                ),
+              ),
               const SizedBox(width: 15),
-              _buildQuestCard('Misi Harian:\nJava Variable', 'assets/java.png'),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 800),
+                  transitionBuilder: (Widget child, Animation<double> animation) {
+                    return SlideTransition(
+                      position: Tween<Offset>(begin: const Offset(1.2, 0.0), end: Offset.zero).animate(animation),
+                      child: FadeTransition(opacity: animation, child: child),
+                    );
+                  },
+                  child: _buildQuestCard(secondQuest['title']!, secondQuest['image']!, key: ValueKey('q2_$_questIndex')),
+                ),
+              ),
             ],
           ),
         ),
@@ -245,142 +278,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= WIDGET PERINGKAT MINGGUAN =================
-  Widget _buildWeeklyLeaderboard() {
-    // Ambil maksimal 3 data teratas dari list leaderboard asli
-    List<dynamic> topThree = leaderboard.take(3).toList();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            )
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Peringkat Mingguan', 
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
-                ),
-                TextButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => LeaderboardScreen(leaderboard: leaderboard)),
-                  ),
-                  child: const Text('Lihat Semua'),
-                )
-              ],
-            ),
-            const Divider(),
-            
-            // Looping data top 3
-            ...topThree.asMap().entries.map((entry) {
-              int index = entry.key;
-              var data = entry.value;
-              
-              // Menentukan warna untuk rank 1 (Emas), 2 (Perak), 3 (Perunggu)
-              Color rankColor;
-              if (index == 0) {
-                rankColor = Colors.orangeAccent; // Gold
-              } else if (index == 1) {
-                rankColor = Colors.blueGrey.shade300; // Silver
-              } else {
-                rankColor = Colors.brown.shade400; // Bronze
-              }
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  
-                  // Gabungan Angka Rank & Foto Profil
-                  leading: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: 24, // Fix width agar posisi foto rata/sejajar
-                        child: Text(
-                          '#${index + 1}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold, 
-                            fontSize: 16,
-                            color: rankColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      // Foto Profil
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Colors.green.shade100,
-                        backgroundImage: (data['avatar_url'] != null && data['avatar_url'].toString().isNotEmpty)
-                            ? NetworkImage(data['avatar_url'])
-                            : null,
-                        child: (data['avatar_url'] == null || data['avatar_url'].toString().isEmpty)
-                            ? const Icon(Icons.person, color: Colors.green, size: 20)
-                            : null,
-                      ),
-                    ],
-                  ),
-                  
-                  // Nama User
-                  title: Text(
-                    data['nama_lengkap'] ?? 'User', 
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)
-                  ),
-                  
-                  // Subtitle Level
-                  subtitle: Text(
-                    'Level ${data['level'] ?? 1}',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                  ),
-
-                  // XP User dengan Background Badge
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(10)
-                    ),
-                    child: Text(
-                      '${data['total_xp']} XP',
-                      style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ================= HELPER KARTU QUEST =================
-  Widget _buildQuestCard(String title, String imagePath) {
+  Widget _buildQuestCard(String title, String imagePath, {Key? key}) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const MateriScreen(),
-          ),
-        );
-      },
+      key: key,
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MateriScreen())),
       child: Container(
-        width: 150,
+        height: 160,
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -388,10 +292,74 @@ class _HomeScreenState extends State<HomeScreen> {
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Expanded(child: Image.asset(imagePath, fit: BoxFit.contain)),
             const SizedBox(height: 10),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ================= PERINGKAT MINGGUAN =================
+  Widget _buildWeeklyLeaderboard() {
+    List<dynamic> topThree = leaderboard.take(3).toList();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Peringkat Mingguan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                TextButton(
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => LeaderboardScreen(leaderboard: leaderboard))),
+                  child: const Text('Lihat Semua'),
+                )
+              ],
+            ),
+            const Divider(),
+            ...topThree.asMap().entries.map((entry) {
+              int index = entry.key;
+              var data = entry.value;
+              Color rankColor = index == 0 ? Colors.orangeAccent : (index == 1 ? Colors.blueGrey.shade300 : Colors.brown.shade400);
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(width: 24, child: Text('#${index + 1}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: rankColor))),
+                      const SizedBox(width: 10),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.green.shade100,
+                        backgroundImage: (data['avatar_url'] != null && data['avatar_url'] != "") ? NetworkImage(data['avatar_url']) : null,
+                        child: (data['avatar_url'] == null || data['avatar_url'] == "") ? const Icon(Icons.person, color: Colors.green, size: 20) : null,
+                      ),
+                    ],
+                  ),
+                  title: Text(data['nama_lengkap'] ?? 'User', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  subtitle: Text('Level ${data['level'] ?? 1}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(10)),
+                    child: Text('${data['total_xp']} XP', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
+                ),
+              );
+            }).toList(),
           ],
         ),
       ),
