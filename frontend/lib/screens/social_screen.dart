@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'chat_screen.dart'; // IMPORT LAYAR CHAT
 
 class SocialScreen extends StatefulWidget {
   final String currentUserId;
@@ -90,7 +91,7 @@ class _SocialScreenState extends State<SocialScreen> {
     );
   }
 
-  // === FUNGSI MENAMPILKAN POPUP DETAIL TEMAN (TARGET 2) ===
+  // === FUNGSI MENAMPILKAN POPUP DETAIL TEMAN & TOMBOL CHAT ===
   void _showFriendProfile(Map<String, dynamic> user) {
     showDialog(
       context: context,
@@ -133,6 +134,26 @@ class _SocialScreenState extends State<SocialScreen> {
             ),
             
             const SizedBox(height: 20),
+
+            // === TOMBOL CHAT BARU ===
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+              icon: const Icon(Icons.chat, color: Colors.white),
+              label: const Text('Chat Sekarang', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.pop(context); // Tutup popup dulu
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ChatScreen(
+                    currentUserId: widget.currentUserId,
+                    friendId: user['_id'],
+                    friendName: user['nama_lengkap'] ?? 'Anonim',
+                  )),
+                );
+              },
+            ),
+
+            const SizedBox(height: 10),
             const Divider(),
             const SizedBox(height: 10),
             
