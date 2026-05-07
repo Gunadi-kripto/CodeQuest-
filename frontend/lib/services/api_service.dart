@@ -296,4 +296,24 @@ class ApiService {
       return jsonDecode(response.body);
     } catch (e) { return {'message': 'Gagal server'}; }
   }
+
+  // FUNGSI CHAT
+  static Future<Map<String, dynamic>> getChats(String userId, String friendId) async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/chats/$userId/$friendId'));
+      if (res.statusCode == 200) return jsonDecode(res.body);
+      return {'messages': [], 'canChat': true, 'dailyCount': 0};
+    } catch (e) { return {'messages': [], 'canChat': true, 'dailyCount': 0}; }
+  }
+
+  static Future<bool> sendMessage(String senderId, String receiverId, String text) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/chats/send'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'senderId': senderId, 'receiverId': receiverId, 'text': text})
+      );
+      return res.statusCode == 200;
+    } catch (e) { return false; }
+  }
 }

@@ -54,6 +54,13 @@ const userSchema = new mongoose.Schema({
     type: Number, 
     default: 1 
   },
+
+  daily_chat_count: { 
+    type: Number, default: 0 
+  },
+  last_chat_date: { 
+    type: Date, default: Date.now
+   },
   total_materi_dibaca: { 
     type: Number, 
     default: 0 
