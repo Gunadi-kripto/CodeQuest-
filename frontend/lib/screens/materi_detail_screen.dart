@@ -1,6 +1,7 @@
-import 'dart:convert'; // Wajib ditambah untuk decode user_data
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'quiz_screen.dart'; 
 
 class MateriDetailScreen extends StatefulWidget {
@@ -20,40 +21,34 @@ class _MateriDetailScreenState extends State<MateriDetailScreen> {
     _markAsRead(); 
   }
 
-  // Fungsi mencatat bahwa materi ini sudah dibaca SPESIFIK untuk User yang login
   Future<void> _markAsRead() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    
-    // Ambil ID User yang sedang login
     String? userStr = prefs.getString('user_data');
     if (userStr != null) {
       Map<String, dynamic> userData = jsonDecode(userStr);
       String userId = userData['id'] ?? userData['_id'] ?? '';
-      
       String moduleId = widget.module['_id'];
-      
-      // Simpan dengan kunci: read_IDUSER_IDMATERI
       await prefs.setBool('read_${userId}_$moduleId', true); 
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Ambil materi_isi (array dari MongoDB)
+    final List<dynamic> isiMateri = widget.module['materi_isi'] ?? [];
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.module['judul_modul']?.toString() ?? 'Materi', style: const TextStyle(color: Colors.white)),
-        backgroundColor: Colors.green,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(widget.module['judul_modul'] ?? 'Detail Materi'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.module['judul_modul']?.toString() ?? 'Tanpa Judul',
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.green),
+              widget.module['judul_modul']?.toString() ?? '',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green),
             ),
             const SizedBox(height: 12),
             Text(
@@ -62,10 +57,31 @@ class _MateriDetailScreenState extends State<MateriDetailScreen> {
             ),
             const Divider(height: 40, thickness: 1, color: Colors.green),
             
-            Text(
-              widget.module['materi_isi']?.toString() ?? 'Isi materi kosong.',
-              style: const TextStyle(fontSize: 16, height: 1.6, color: Colors.black87),
-            ),
+            // RENDERING ISI MATERI DINAMIS (TEKS & GAMBAR)
+            ...isiMateri.map((item) {
+              if (item['tipe'] == 'text') {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: Text(
+                    item['content'] ?? '',
+                    style: const TextStyle(fontSize: 17, height: 1.6, color: Colors.black87),
+                  ),
+                );
+              } else if (item['tipe'] == 'image') {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: CachedNetworkImage(
+                      imageUrl: item['content'] ?? '',
+                      placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 50),
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox();
+            }).toList(),
             
             const SizedBox(height: 50),
             
