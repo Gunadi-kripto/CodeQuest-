@@ -8,12 +8,11 @@ class ApiService {
   static const String baseUrl = 'http://10.0.2.2:5000/api'; 
 
   // ==========================================
-  // 1. FUNGSI BAHASA (LANGUAGE) - FIXED URL
+  // 1. FUNGSI BAHASA (LANGUAGE)
   // ==========================================
   
   static Future<List<dynamic>> getLanguages() async {
     try {
-      // Mengambil daftar bahasa dari backend
       final response = await http.get(Uri.parse('$baseUrl/language'));
       if (response.statusCode == 200) return jsonDecode(response.body);
       return [];
@@ -25,7 +24,6 @@ class ApiService {
 
   static Future<Map<String, dynamic>> addLanguage(String namaBahasa, String warnaTema, File iconFile) async {
     try {
-      // Mengirim data bahasa baru ke backend menggunakan Multipart
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/language'));
       request.fields['nama_bahasa'] = namaBahasa;
       request.fields['warna_tema'] = warnaTema;
@@ -33,21 +31,75 @@ class ApiService {
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
-      
+
       if (response.statusCode == 201) {
-        return {'success': true, 'message': 'Berhasil ditambahkan'};
+        return {'success': true, 'message': 'Bahasa berhasil ditambahkan!'};
       } else {
         final data = jsonDecode(response.body);
         return {'success': false, 'message': data['message'] ?? 'Gagal menambah bahasa'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Gagal server: $e'};
+      return {'success': false, 'message': 'Gagal koneksi: $e'};
     }
   }
 
   // ==========================================
-  // 2. FUNGSI MATERI (MODULE) & XP
+  // 2. FUNGSI MATERI (MODULE) - MULTI-KONTEN V2
   // ==========================================
+
+  static Future<Map<String, dynamic>> addModuleV2({
+    required String idBahasa,
+    required String judul,
+    required String deskripsi,
+    required List<Map<String, dynamic>> contents,
+  }) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/modules'));
+      
+      request.fields['id_bahasa'] = idBahasa;
+      request.fields['judul_modul'] = judul;
+      request.fields['deskripsi'] = deskripsi;
+      request.fields['urutan'] = "1"; 
+
+      for (int i = 0; i < contents.length; i++) {
+        var item = contents[i];
+        request.fields['type_$i'] = item['tipe'] ?? 'text';
+        
+        if (item['tipe'] == 'text') {
+          String textVal = "";
+          if (item['controller'] != null) {
+            textVal = item['controller'].text;
+          } else {
+            textVal = item['content']?.toString() ?? "";
+          }
+          request.fields['content_$i'] = textVal;
+        } else if (item['tipe'] == 'image') {
+          if (item['isExisting'] == true) {
+            request.fields['content_$i'] = item['content'] ?? ""; 
+          } else if (item['file'] != null) {
+            request.files.add(await http.MultipartFile.fromPath('file_$i', item['file'].path));
+          }
+        }
+      }
+      request.fields['total_items'] = contents.length.toString();
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.body.contains('<!DOCTYPE html>')) {
+        return {'success': false, 'message': 'Server Error (404/500). Cek Endpoint /api/modules'};
+      }
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return {'success': true};
+      } else {
+        final data = jsonDecode(response.body);
+        return {'success': false, 'message': data['message'] ?? 'Gagal simpan materi'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Koneksi error: $e'};
+    }
+  }
 
   static Future<List<dynamic>> getModulesByLanguage(String idBahasa) async {
     try {
@@ -55,30 +107,6 @@ class ApiService {
       if (response.statusCode == 200) return jsonDecode(response.body);
       return [];
     } catch (e) { return []; }
-  }
-
-  static Future<Map<String, dynamic>> addModuleWithLanguage(
-    String idBahasa, String judul, String deskripsi, String tipe, String textContent, File? imageFile
-  ) async {
-    try {
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/modules'));
-      request.fields['id_bahasa'] = idBahasa;
-      request.fields['judul_modul'] = judul;
-      request.fields['deskripsi'] = deskripsi;
-      request.fields['tipe'] = tipe;
-      
-      if (tipe == 'text') {
-        request.fields['materi_teks'] = textContent;
-      } else if (tipe == 'image' && imageFile != null) {
-        request.files.add(await http.MultipartFile.fromPath('materi_file', imageFile.path));
-      }
-
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-      
-      if (response.statusCode == 201) return {'success': true};
-      return {'success': false, 'message': 'Gagal menyimpan materi'};
-    } catch (e) { return {'success': false, 'message': 'Error server: $e'}; }
   }
 
   static Future<List<dynamic>> getModules() async {
@@ -94,25 +122,6 @@ class ApiService {
       final res = await http.delete(Uri.parse('$baseUrl/modules/$id'));
       return res.statusCode == 200;
     } catch (e) { return false; }
-  }
-
-  static Future<Map<String, dynamic>> addXp(String userId, int xpToAdd) async {
-    try {
-      final response = await http.post(Uri.parse('$baseUrl/users/add-xp'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'userId': userId, 'xpToAdd': xpToAdd}));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        String? userStr = prefs.getString('user_data');
-        if (userStr != null) {
-          Map<String, dynamic> userData = jsonDecode(userStr);
-          userData['total_xp'] = data['total_xp'];
-          userData['level'] = data['level'];
-          await prefs.setString('user_data', jsonEncode(userData));
-        }
-        return {'success': true, 'new_achievements': data['new_achievements']};
-      }
-      return {'success': false};
-    } catch (e) { return {'success': false}; }
   }
 
   // ==========================================
@@ -288,7 +297,7 @@ class ApiService {
   }
 
   // ==========================================
-  // 5. FUNGSI KUIS
+  // 5. FUNGSI KUIS & XP
   // ==========================================
 
   static Future<List<dynamic>> getQuizzes(String moduleId) async {
@@ -297,6 +306,25 @@ class ApiService {
       if (response.statusCode == 200) return jsonDecode(response.body);
       return [];
     } catch (e) { return []; }
+  }
+
+  static Future<Map<String, dynamic>> addXp(String userId, int xpToAdd) async {
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/users/add-xp'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'userId': userId, 'xpToAdd': xpToAdd}));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? userStr = prefs.getString('user_data');
+        if (userStr != null) {
+          Map<String, dynamic> userData = jsonDecode(userStr);
+          userData['total_xp'] = data['total_xp'];
+          userData['level'] = data['level'];
+          await prefs.setString('user_data', jsonEncode(userData));
+        }
+        return {'success': true, 'new_achievements': data['new_achievements']};
+      }
+      return {'success': false};
+    } catch (e) { return {'success': false}; }
   }
 
   static Future<bool> addQuiz(String moduleId, String pertanyaan, String kunci, String hint, int xp) async {
