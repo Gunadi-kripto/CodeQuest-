@@ -21,7 +21,6 @@ class _MateriScreenState extends State<MateriScreen> {
   }
 
   Future<void> _loadLanguages() async {
-    // Mengambil data bahasa secara dinamis dari API
     final fetchedLanguages = await ApiService.getLanguages();
     if (mounted) {
       setState(() {
@@ -34,76 +33,82 @@ class _MateriScreenState extends State<MateriScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'Pilih Bahasa',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.green))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  // ================= IMAGE HEADER (Punya Kamu) =================
-                  Image.asset(
-                    'assets/Software Engineer.jpg',
-                    height: 210,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Pilih Bahasa\nPemrograman',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Setiap bahasa memiliki jalur belajar\nyang berbeda',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // ================= GRID DINAMIS (Gaya Kamu + Data Teman) =================
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: languages.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 18,
-                      mainAxisSpacing: 18,
-                      childAspectRatio: 0.88,
-                    ),
-                    itemBuilder: (context, index) {
-                      final lang = languages[index];
-                      return _buildDynamicLanguageCard(context, lang);
-                    },
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  // ================= STREAK BOX (Punya Kamu) =================
-                  _buildStreakBox(),
-                  const SizedBox(height: 30),
-                ],
-              ),
+      body: Stack(
+        children: [
+          // ── BACKGROUND DARI GUNADI ──
+          SizedBox.expand(
+            child: Image.asset(
+              'assets/coding_bg.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
             ),
+          ),
+
+          // ── KONTEN UI KEREN KAMU ──
+          SafeArea(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator(color: Colors.green))
+                : RefreshIndicator(
+                    onRefresh: _loadLanguages,
+                    color: Colors.green,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 20),
+                          // Header Gambar (Punya Kamu)
+                          Image.asset(
+                            'assets/Software Engineer.jpg',
+                            height: 200,
+                            fit: BoxFit.contain,
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Pilih Bahasa\nPemrograman',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              height: 1.2,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Grid Bahasa Dinamis
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: languages.length,
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 15,
+                              mainAxisSpacing: 15,
+                              childAspectRatio: 0.9,
+                            ),
+                            itemBuilder: (context, index) {
+                              final lang = languages[index];
+                              return _buildLanguageCard(lang);
+                            },
+                          ),
+
+                          const SizedBox(height: 25),
+
+                          // Streak Box (Punya Kamu)
+                          _buildStreakBox(),
+                          const SizedBox(height: 30),
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
-  // Widget Card Bahasa dengan Desain Kamu tapi Data Dinamis
-  Widget _buildDynamicLanguageCard(BuildContext context, dynamic lang) {
+  Widget _buildLanguageCard(dynamic lang) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -117,33 +122,39 @@ class _MateriScreenState extends State<MateriScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.green.withOpacity(0.3), width: 2),
+          color: Colors.white.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            )
+              color: Colors.black.withValues(alpha: 0.07),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Pakai CachedNetworkImage karena icon dari database (URL)
-            CachedNetworkImage(
-              imageUrl: lang['icon_url'] ?? '',
-              height: 70,
-              placeholder: (context, url) => const CircularProgressIndicator(),
-              errorWidget: (context, url, error) => const Icon(Icons.code, size: 50, color: Colors.grey),
+            Container(
+              width: 65,
+              height: 65,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: CachedNetworkImage(
+                imageUrl: lang['icon_url'] ?? '',
+                fit: BoxFit.contain,
+                placeholder: (context, url) => const CircularProgressIndicator(strokeWidth: 2, color: Colors.green),
+                errorWidget: (context, url, error) => const Icon(Icons.code, size: 30, color: Colors.green),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               lang['nama_bahasa'] ?? '',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ],
         ),
@@ -155,32 +166,25 @@ class _MateriScreenState extends State<MateriScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF8EA),
+        color: const Color(0xFFEAF8EA).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 52, height: 52,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(Icons.local_fire_department, color: Colors.green, size: 30),
-          ),
-          const SizedBox(width: 16),
+          const Icon(Icons.local_fire_department, color: Colors.green, size: 35),
+          const SizedBox(width: 15),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Bangun Streak Belajarmu!',
-                  style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 17),
+                  style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                SizedBox(height: 4),
                 Text(
-                  'Belajar setiap hari untuk\nmendapatkan XP lebih banyak!',
-                  style: TextStyle(color: Colors.black54, fontSize: 14),
+                  'Dapatkan lebih banyak XP setiap hari!',
+                  style: TextStyle(color: Colors.black54, fontSize: 13),
                 ),
               ],
             ),
@@ -191,7 +195,7 @@ class _MateriScreenState extends State<MateriScreen> {
   }
 }
 
-// ================= LIST MODUL (Gaya Desain Detail Kamu) =================
+// ── DAFTAR MODUL (Style Container Keren) ──
 
 class StudentModuleListScreen extends StatefulWidget {
   final String languageId;
@@ -227,74 +231,50 @@ class _StudentModuleListScreenState extends State<StudentModuleListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        title: Text(
-          'Materi ${widget.languageName}',
-          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+        title: Text('Materi ${widget.languageName}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.green,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.green))
-          : modules.isEmpty 
-            ? const Center(child: Text('Belum ada materi untuk bahasa ini.'))
-            : ListView.builder(
-                padding: const EdgeInsets.all(20),
-                itemCount: modules.length,
-                itemBuilder: (context, index) {
-                  final mod = modules[index];
-                  return GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => MateriDetailScreen(module: mod)),
+          : ListView.builder(
+              padding: const EdgeInsets.all(20),
+              itemCount: modules.length,
+              itemBuilder: (context, index) {
+                final mod = modules[index];
+                return GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => MateriDetailScreen(module: mod))),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 15),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
                     ),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 55, height: 55,
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Icon(Icons.menu_book, color: Colors.green),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Colors.green.withValues(alpha: 0.1),
+                          child: Text('${index + 1}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(mod['judul_modul'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              Text(mod['deskripsi'], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                            ],
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  mod['judul_modul']?.toString() ?? 'Tanpa Judul',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  mod['deskripsi']?.toString() ?? '',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
-                        ],
-                      ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.green),
+                      ],
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
