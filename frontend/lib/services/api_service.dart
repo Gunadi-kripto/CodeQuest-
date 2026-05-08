@@ -7,7 +7,118 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:5000/api'; 
 
-  // FUNGSI OTENTIKASI & OTP
+  // ==========================================
+  // 1. FUNGSI BAHASA (LANGUAGE) - FIXED URL
+  // ==========================================
+  
+  static Future<List<dynamic>> getLanguages() async {
+    try {
+      // Mengambil daftar bahasa dari backend
+      final response = await http.get(Uri.parse('$baseUrl/language'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) {
+      print('Error fetch languages: $e');
+      return [];
+    }
+  }
+
+  static Future<Map<String, dynamic>> addLanguage(String namaBahasa, String warnaTema, File iconFile) async {
+    try {
+      // Mengirim data bahasa baru ke backend menggunakan Multipart
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/language'));
+      request.fields['nama_bahasa'] = namaBahasa;
+      request.fields['warna_tema'] = warnaTema;
+      request.files.add(await http.MultipartFile.fromPath('icon_file', iconFile.path));
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 201) {
+        return {'success': true, 'message': 'Berhasil ditambahkan'};
+      } else {
+        final data = jsonDecode(response.body);
+        return {'success': false, 'message': data['message'] ?? 'Gagal menambah bahasa'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal server: $e'};
+    }
+  }
+
+  // ==========================================
+  // 2. FUNGSI MATERI (MODULE) & XP
+  // ==========================================
+
+  static Future<List<dynamic>> getModulesByLanguage(String idBahasa) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/modules/bahasa/$idBahasa'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) { return []; }
+  }
+
+  static Future<Map<String, dynamic>> addModuleWithLanguage(
+    String idBahasa, String judul, String deskripsi, String tipe, String textContent, File? imageFile
+  ) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/modules'));
+      request.fields['id_bahasa'] = idBahasa;
+      request.fields['judul_modul'] = judul;
+      request.fields['deskripsi'] = deskripsi;
+      request.fields['tipe'] = tipe;
+      
+      if (tipe == 'text') {
+        request.fields['materi_teks'] = textContent;
+      } else if (tipe == 'image' && imageFile != null) {
+        request.files.add(await http.MultipartFile.fromPath('materi_file', imageFile.path));
+      }
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 201) return {'success': true};
+      return {'success': false, 'message': 'Gagal menyimpan materi'};
+    } catch (e) { return {'success': false, 'message': 'Error server: $e'}; }
+  }
+
+  static Future<List<dynamic>> getModules() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/modules'));
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return [];
+    } catch (e) { return []; }
+  }
+
+  static Future<bool> deleteModule(String id) async {
+    try {
+      final res = await http.delete(Uri.parse('$baseUrl/modules/$id'));
+      return res.statusCode == 200;
+    } catch (e) { return false; }
+  }
+
+  static Future<Map<String, dynamic>> addXp(String userId, int xpToAdd) async {
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/users/add-xp'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'userId': userId, 'xpToAdd': xpToAdd}));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        String? userStr = prefs.getString('user_data');
+        if (userStr != null) {
+          Map<String, dynamic> userData = jsonDecode(userStr);
+          userData['total_xp'] = data['total_xp'];
+          userData['level'] = data['level'];
+          await prefs.setString('user_data', jsonEncode(userData));
+        }
+        return {'success': true, 'new_achievements': data['new_achievements']};
+      }
+      return {'success': false};
+    } catch (e) { return {'success': false}; }
+  }
+
+  // ==========================================
+  // 3. FUNGSI OTENTIKASI & OTP
+  // ==========================================
+
   static Future<Map<String, dynamic>> registerUser(String nama, String email, String password) async {
     try {
       final response = await http.post(Uri.parse('$baseUrl/auth/register'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'nama_lengkap': nama, 'email': email, 'password': password}));
@@ -78,7 +189,10 @@ class ApiService {
     } catch (e) { return {'message': 'Kesalahan koneksi', 'statusCode': 500}; }
   }
 
-  // FUNGSI PROFIL & SOSIAL
+  // ==========================================
+  // 4. FUNGSI PROFIL & SOSIAL
+  // ==========================================
+
   static Future<Map<String, dynamic>?> getUserProfile(String userId) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/users/profile/$userId'));
@@ -135,6 +249,20 @@ class ApiService {
     } catch (e) { return {'message': 'Gagal server'}; }
   }
 
+  static Future<Map<String, dynamic>> rejectFriendRequest(String userId, String senderId) async {
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/users/reject-friend'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'userId': userId, 'senderId': senderId}));
+      return jsonDecode(response.body);
+    } catch (e) { return {'message': 'Gagal server'}; }
+  }
+
+  static Future<Map<String, dynamic>> removeFriend(String userId, String friendId) async {
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/users/remove-friend'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'userId': userId, 'friendId': friendId}));
+      return jsonDecode(response.body);
+    } catch (e) { return {'message': 'Gagal server'}; }
+  }
+
   static Future<Map<String, dynamic>?> getSocialData(String userId) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/users/$userId/social'));
@@ -160,85 +288,8 @@ class ApiService {
   }
 
   // ==========================================
-  // FUNGSI BAHASA (LANGUAGE) - BARU DITAMBAHKAN
+  // 5. FUNGSI KUIS
   // ==========================================
-  
-  static Future<List<dynamic>> getLanguages() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/languages'));
-      if (response.statusCode == 200) return jsonDecode(response.body);
-      return [];
-    } catch (e) {
-      print('Error fetch languages: $e');
-      return [];
-    }
-  }
-
-  static Future<Map<String, dynamic>> addLanguage(String namaBahasa, String warnaTema, File iconFile) async {
-    try {
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/languages'));
-      request.fields['nama_bahasa'] = namaBahasa;
-      request.fields['warna_tema'] = warnaTema;
-      request.files.add(await http.MultipartFile.fromPath('icon_file', iconFile.path));
-
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-      var data = jsonDecode(response.body);
-
-      if (response.statusCode == 201) {
-        return {'success': true, 'message': data['message'] ?? 'Berhasil'};
-      } else {
-        return {'success': false, 'message': data['message'] ?? 'Gagal menambah bahasa'};
-      }
-    } catch (e) {
-      return {'success': false, 'message': 'Gagal server: $e'};
-    }
-  }
-
-  // ==========================================
-  // FUNGSI MATERI, KUIS, & XP
-  // ==========================================
-  // AMBIL MATERI BERDASARKAN BAHASA
-  static Future<List<dynamic>> getModulesByLanguage(String idBahasa) async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/modules/bahasa/$idBahasa'));
-      if (response.statusCode == 200) return jsonDecode(response.body);
-      return [];
-    } catch (e) { return []; }
-  }
-
-  // TAMBAH MATERI BARU (MENDUKUNG UPLOAD GAMBAR)
-  static Future<Map<String, dynamic>> addModuleWithLanguage(
-    String idBahasa, String judul, String deskripsi, String tipe, String textContent, File? imageFile
-  ) async {
-    try {
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/modules'));
-      request.fields['id_bahasa'] = idBahasa;
-      request.fields['judul_modul'] = judul;
-      request.fields['deskripsi'] = deskripsi;
-      request.fields['tipe'] = tipe;
-      
-      if (tipe == 'text') {
-        request.fields['materi_teks'] = textContent;
-      } else if (tipe == 'image' && imageFile != null) {
-        request.files.add(await http.MultipartFile.fromPath('materi_file', imageFile.path));
-      }
-
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-      
-      if (response.statusCode == 201) return {'success': true};
-      return {'success': false, 'message': 'Gagal menyimpan materi'};
-    } catch (e) { return {'success': false, 'message': 'Error server: $e'}; }
-  }
-
-  static Future<List<dynamic>> getModules() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/modules'));
-      if (response.statusCode == 200) return jsonDecode(response.body);
-      return [];
-    } catch (e) { return []; }
-  }
 
   static Future<List<dynamic>> getQuizzes(String moduleId) async {
     try {
@@ -246,47 +297,6 @@ class ApiService {
       if (response.statusCode == 200) return jsonDecode(response.body);
       return [];
     } catch (e) { return []; }
-  }
-
-  static Future<Map<String, dynamic>> addXp(String userId, int xpToAdd) async {
-    try {
-      final response = await http.post(Uri.parse('$baseUrl/users/add-xp'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'userId': userId, 'xpToAdd': xpToAdd}));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        String? userStr = prefs.getString('user_data');
-        if (userStr != null) {
-          Map<String, dynamic> userData = jsonDecode(userStr);
-          userData['total_xp'] = data['total_xp'];
-          userData['level'] = data['level'];
-          await prefs.setString('user_data', jsonEncode(userData));
-        }
-        return {'success': true, 'new_achievements': data['new_achievements']};
-      }
-      return {'success': false};
-    } catch (e) { return {'success': false}; }
-  }
-
-  // FUNGSI ADMIN: CRUD MATERI & KUIS & USER
-  static Future<bool> addModule(String judul, String deskripsi, String isi) async {
-    try {
-      final response = await http.post(Uri.parse('$baseUrl/modules'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'judul_modul': judul, 'deskripsi': deskripsi, 'materi_isi': isi}));
-      return response.statusCode == 201;
-    } catch (e) { return false; }
-  }
-
-  static Future<bool> updateModule(String id, String judul, String deskripsi, String isi) async {
-    try {
-      final response = await http.put(Uri.parse('$baseUrl/modules/$id'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'judul_modul': judul, 'deskripsi': deskripsi, 'materi_isi': isi}));
-      return response.statusCode == 200;
-    } catch (e) { return false; }
-  }
-
-  static Future<bool> deleteModule(String id) async {
-    try {
-      final res = await http.delete(Uri.parse('$baseUrl/modules/$id'));
-      return res.statusCode == 200;
-    } catch (e) { return false; }
   }
 
   static Future<bool> addQuiz(String moduleId, String pertanyaan, String kunci, String hint, int xp) async {
@@ -310,14 +320,10 @@ class ApiService {
     } catch (e) { return false; }
   }
 
-  static Future<bool> adminDeleteUser(String userId) async {
-    try {
-      final res = await http.delete(Uri.parse('$baseUrl/users/admin/force-delete/$userId'));
-      return res.statusCode == 200;
-    } catch (e) { return false; }
-  }
+  // ==========================================
+  // 6. FUNGSI ACHIEVEMENTS (PIALA)
+  // ==========================================
 
-  // FUNGSI ADMIN: KELOLA PENCAPAIAN
   static Future<List<dynamic>> getAchievements() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/achievements'));
@@ -347,29 +353,21 @@ class ApiService {
     } catch (e) { return false; }
   }
 
-  static Future<Map<String, dynamic>> rejectFriendRequest(String userId, String senderId) async {
+  // ==========================================
+  // 7. FUNGSI ADMIN EXTRA
+  // ==========================================
+
+  static Future<bool> adminDeleteUser(String userId) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/reject-friend'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': userId, 'senderId': senderId})
-      );
-      return jsonDecode(response.body);
-    } catch (e) { return {'message': 'Gagal server'}; }
+      final res = await http.delete(Uri.parse('$baseUrl/users/admin/force-delete/$userId'));
+      return res.statusCode == 200;
+    } catch (e) { return false; }
   }
 
-  static Future<Map<String, dynamic>> removeFriend(String userId, String friendId) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/remove-friend'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': userId, 'friendId': friendId})
-      );
-      return jsonDecode(response.body);
-    } catch (e) { return {'message': 'Gagal server'}; }
-  }
+  // ==========================================
+  // 8. FUNGSI CHAT
+  // ==========================================
 
-  // FUNGSI CHAT
   static Future<Map<String, dynamic>> getChats(String userId, String friendId) async {
     try {
       final res = await http.get(Uri.parse('$baseUrl/chats/$userId/$friendId'));
@@ -380,11 +378,7 @@ class ApiService {
 
   static Future<bool> sendMessage(String senderId, String receiverId, String text) async {
     try {
-      final res = await http.post(
-        Uri.parse('$baseUrl/chats/send'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'senderId': senderId, 'receiverId': receiverId, 'text': text})
-      );
+      final res = await http.post(Uri.parse('$baseUrl/chats/send'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'senderId': senderId, 'receiverId': receiverId, 'text': text}));
       return res.statusCode == 200;
     } catch (e) { return false; }
   }
