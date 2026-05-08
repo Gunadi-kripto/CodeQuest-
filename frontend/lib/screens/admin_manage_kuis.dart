@@ -20,22 +20,20 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
     _loadModules();
   }
 
-  // 1. Load Daftar Materi untuk Dropdown
   Future<void> _loadModules() async {
     setState(() => isLoading = true);
     final data = await ApiService.getModules();
     setState(() {
       modules = data;
       if (modules.isNotEmpty) {
-        selectedModuleId = modules[0]['_id']; // Pilih modul pertama sebagai default
-        _loadQuizzes(); // Langsung load kuisnya
+        selectedModuleId = modules[0]['_id'];
+        _loadQuizzes();
       } else {
         isLoading = false;
       }
     });
   }
 
-  // 2. Load Kuis berdasarkan Materi yang dipilih
   Future<void> _loadQuizzes() async {
     if (selectedModuleId == null) return;
     setState(() => isLoading = true);
@@ -46,13 +44,17 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
     });
   }
 
-  // FUNGSI FORM PINTAR (TAMBAH / EDIT KUIS)
   void _showQuizForm({Map<String, dynamic>? quiz}) {
     final bool isEdit = quiz != null;
     final TextEditingController tanyaController = TextEditingController(text: isEdit ? quiz['pertanyaan'] : '');
-    final TextEditingController kunciController = TextEditingController(text: isEdit ? quiz['kunci_jawaban'] : '');
     final TextEditingController hintController = TextEditingController(text: isEdit ? quiz['hint'] : '');
     final TextEditingController xpController = TextEditingController(text: isEdit ? quiz['xp_reward'].toString() : '10');
+    
+    final List<TextEditingController> opsiControllers = List.generate(4, (index) {
+      return TextEditingController(text: isEdit ? quiz['opsi'][index] : '');
+    });
+
+    int correctIndex = isEdit ? (quiz['jawaban_benar'] as num).toInt() : 0;
     bool isSaving = false;
 
     showModalBottomSheet(
@@ -66,46 +68,46 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(isEdit ? 'Edit Kuis' : 'Tambah Kuis Baru', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green)),
+                  Text(isEdit ? 'Edit Kuis Pilihan Ganda' : 'Kuis Baru', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green)),
                   const SizedBox(height: 20),
-                  
-                  TextField(controller: tanyaController, maxLines: 2, decoration: const InputDecoration(labelText: 'Pertanyaan', border: OutlineInputBorder())),
-                  const SizedBox(height: 16),
-                  
-                  TextField(controller: kunciController, decoration: const InputDecoration(labelText: 'Kunci Jawaban (Harus Persis)', border: OutlineInputBorder())),
-                  const SizedBox(height: 16),
-                  
-                  TextField(controller: hintController, decoration: const InputDecoration(labelText: 'Hint / Petunjuk (Opsional)', border: OutlineInputBorder())),
-                  const SizedBox(height: 16),
-
-                  TextField(controller: xpController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Hadiah XP', border: OutlineInputBorder(), prefixIcon: Icon(Icons.star, color: Colors.orange))),
-                  const SizedBox(height: 24),
-                  
+                  TextField(controller: tanyaController, decoration: const InputDecoration(labelText: 'Pertanyaan', border: OutlineInputBorder())),
+                  const SizedBox(height: 20),
+                  ...List.generate(4, (index) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      children: [
+                        Radio<int>(
+                          value: index,
+                          groupValue: correctIndex,
+                          onChanged: (val) => setSheetState(() => correctIndex = val!),
+                        ),
+                        Expanded(child: TextField(controller: opsiControllers[index], decoration: InputDecoration(labelText: 'Opsi ${String.fromCharCode(65 + index)}'))),
+                      ],
+                    ),
+                  )),
+                  const SizedBox(height: 10),
+                  TextField(controller: hintController, decoration: const InputDecoration(labelText: 'Hint', border: OutlineInputBorder())),
+                  const SizedBox(height: 10),
+                  TextField(controller: xpController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'XP Reward', border: OutlineInputBorder())),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(vertical: 16)),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.all(16)),
                       onPressed: isSaving ? null : () async {
-                        if (tanyaController.text.isEmpty || kunciController.text.isEmpty) return;
-
+                        if (tanyaController.text.isEmpty || opsiControllers.any((e) => e.text.isEmpty)) return;
                         setSheetState(() => isSaving = true);
-                        int xpValue = int.tryParse(xpController.text) ?? 10;
+                        List<String> opsiList = opsiControllers.map((e) => e.text).toList();
                         
-                        bool success;
-                        if (isEdit) {
-                          success = await ApiService.updateQuiz(quiz['_id'], tanyaController.text, kunciController.text, hintController.text, xpValue);
-                        } else {
-                          success = await ApiService.addQuiz(selectedModuleId!, tanyaController.text, kunciController.text, hintController.text, xpValue);
-                        }
+                        bool success = isEdit 
+                          ? await ApiService.updateQuiz(quiz['_id'], tanyaController.text, opsiList, correctIndex, hintController.text, int.parse(xpController.text))
+                          : await ApiService.addQuiz(selectedModuleId!, tanyaController.text, opsiList, correctIndex, hintController.text, int.parse(xpController.text));
                         
-                        if (success) {
-                          Navigator.pop(context); 
-                          _loadQuizzes(); 
-                        }
+                        if (success) { Navigator.pop(context); _loadQuizzes(); }
+                        else { setSheetState(() => isSaving = false); }
                       },
-                      child: isSaving ? const CircularProgressIndicator(color: Colors.white) : Text(isEdit ? 'Simpan Perubahan' : 'Tambah Kuis', style: const TextStyle(color: Colors.white, fontSize: 18)),
+                      child: isSaving ? const CircularProgressIndicator(color: Colors.white) : const Text('Simpan', style: TextStyle(color: Colors.white)),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -118,108 +120,49 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
     );
   }
 
-  // === FUNGSI KONFIRMASI HAPUS KUIS ===
-  void _confirmDeleteQuiz(String id, String pertanyaan) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hapus Kuis?', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-        content: Text('Yakin ingin menghapus kuis "$pertanyaan"? Tindakan ini tidak bisa dibatalkan.'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal', style: TextStyle(color: Colors.grey))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              Navigator.pop(context); // Tutup pop-up
-              setState(() => isLoading = true); // Tampilkan loading
-              
-              bool success = await ApiService.deleteQuiz(id);
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kuis berhasil dihapus.'), backgroundColor: Colors.green));
-                _loadQuizzes(); // Segarkan layar
-              } else {
-                setState(() => isLoading = false);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menghapus kuis.'), backgroundColor: Colors.red));
-              }
-            },
-            child: const Text('Ya, Hapus', style: TextStyle(color: Colors.white)),
-          )
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      floatingActionButton: selectedModuleId == null ? null : FloatingActionButton.extended(
+      floatingActionButton: selectedModuleId == null ? null : FloatingActionButton(
         onPressed: () => _showQuizForm(),
         backgroundColor: Colors.green,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Tambah Kuis', style: TextStyle(color: Colors.white)),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Column(
         children: [
-          // DROPDOWN PILIH MATERI
           Container(
             padding: const EdgeInsets.all(16),
-            color: Colors.white,
-            width: double.infinity,
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: selectedModuleId,
-                isExpanded: true,
-                hint: const Text('Pilih Materi / Bab'),
-                items: modules.map<DropdownMenuItem<String>>((mod) {
-                  return DropdownMenuItem<String>(
-                    value: mod['_id'],
-                    child: Text(mod['judul_modul'] ?? 'Tanpa Judul', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedModuleId = newValue;
-                    _loadQuizzes();
-                  });
-                },
-              ),
+            child: DropdownButton<String>(
+              value: selectedModuleId,
+              isExpanded: true,
+              items: modules.map((m) => DropdownMenuItem<String>(value: m['_id'], child: Text(m['judul_modul']))).toList(),
+              onChanged: (val) { setState(() => selectedModuleId = val); _loadQuizzes(); },
             ),
           ),
-          const Divider(height: 1, thickness: 2),
-          
-          // DAFTAR KUIS
           Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator(color: Colors.green))
-                : quizzes.isEmpty
-                    ? const Center(child: Text('Belum ada kuis untuk materi ini.'))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: quizzes.length,
-                        itemBuilder: (context, index) {
-                          final quiz = quizzes[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              leading: CircleAvatar(backgroundColor: Colors.orange[100], child: Text('${quiz['xp_reward']}', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold))),
-                              title: Text(quiz['pertanyaan'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text('Jawaban: ${quiz['kunci_jawaban']}'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _showQuizForm(quiz: quiz)),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red), 
-                                    onPressed: () => _confirmDeleteQuiz(quiz['_id'], quiz['pertanyaan'] ?? 'Tanpa Pertanyaan')
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+            child: isLoading ? const Center(child: CircularProgressIndicator()) : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: quizzes.length,
+              itemBuilder: (context, index) {
+                final quiz = quizzes[index];
+                int correctIdx = (quiz['jawaban_benar'] as num).toInt();
+                return Card(
+                  child: ListTile(
+                    title: Text(quiz['pertanyaan']),
+                    subtitle: Text("Benar: Opsi ${String.fromCharCode(65 + correctIdx)}"),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _showQuizForm(quiz: quiz)),
+                        IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () async {
+                          if (await ApiService.deleteQuiz(quiz['_id'])) _loadQuizzes();
+                        }),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
