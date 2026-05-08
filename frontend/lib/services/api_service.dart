@@ -327,16 +327,39 @@ class ApiService {
     } catch (e) { return {'success': false}; }
   }
 
-  static Future<bool> addQuiz(String moduleId, String pertanyaan, String kunci, String hint, int xp) async {
+  // UPDATE: Fungsi addQuiz sekarang mendukung Opsi Pilihan Ganda
+  static Future<bool> addQuiz(String moduleId, String pertanyaan, List<String> opsi, int jawabanBenar, String hint, int xp) async {
     try {
-      final res = await http.post(Uri.parse('$baseUrl/quizzes'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'module_id': moduleId, 'pertanyaan': pertanyaan, 'kunci_jawaban': kunci, 'hint': hint, 'xp_reward': xp}));
+      final res = await http.post(
+        Uri.parse('$baseUrl/quizzes'), 
+        headers: {'Content-Type': 'application/json'}, 
+        body: jsonEncode({
+          'module_id': moduleId, 
+          'pertanyaan': pertanyaan, 
+          'opsi': opsi,
+          'jawaban_benar': jawabanBenar,
+          'hint': hint, 
+          'xp_reward': xp
+        })
+      );
       return res.statusCode == 201;
     } catch (e) { return false; }
   }
 
-  static Future<bool> updateQuiz(String quizId, String pertanyaan, String kunci, String hint, int xp) async {
+  // UPDATE: Fungsi updateQuiz sekarang mendukung Opsi Pilihan Ganda
+  static Future<bool> updateQuiz(String quizId, String pertanyaan, List<String> opsi, int jawabanBenar, String hint, int xp) async {
     try {
-      final res = await http.put(Uri.parse('$baseUrl/quizzes/$quizId'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'pertanyaan': pertanyaan, 'kunci_jawaban': kunci, 'hint': hint, 'xp_reward': xp}));
+      final res = await http.put(
+        Uri.parse('$baseUrl/quizzes/$quizId'), 
+        headers: {'Content-Type': 'application/json'}, 
+        body: jsonEncode({
+          'pertanyaan': pertanyaan, 
+          'opsi': opsi,
+          'jawaban_benar': jawabanBenar,
+          'hint': hint, 
+          'xp_reward': xp
+        })
+      );
       return res.statusCode == 200;
     } catch (e) { return false; }
   }

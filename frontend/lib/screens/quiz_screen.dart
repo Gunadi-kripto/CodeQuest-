@@ -5,48 +5,58 @@ import '../services/api_service.dart';
 
 class QuizScreen extends StatefulWidget {
   final String? moduleId;
-
   const QuizScreen({super.key, this.moduleId});
-
   @override
   _QuizScreenState createState() => _QuizScreenState();
 }
 
 class _QuizScreenState extends State<QuizScreen> {
   List<dynamic> quizzes = [];
-  Map<int, String> userAnswers = {}; 
+  Map<int, int> userAnswers = {};
   bool isLoading = true;
   bool isSubmitting = false;
+  bool hasFinished = false; // Status apakah sudah pernah mengerjakan
 
   @override
   void initState() {
     super.initState();
-    if (widget.moduleId != null) {
-      _loadQuizzes();
-    } else {
-      setState(() => isLoading = false);
+    _checkStatusAndLoad();
+  }
+
+  Future<void> _checkStatusAndLoad() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userStr = prefs.getString('user_data');
+    if (userStr != null && widget.moduleId != null) {
+      Map<String, dynamic> userData = jsonDecode(userStr);
+      String userId = userData['id'] ?? userData['_id'];
+      // Cek apakah sudah pernah selesai
+      setState(() {
+        hasFinished = prefs.getBool('quiz_done_${userId}_${widget.moduleId}') ?? false;
+      });
     }
+    _loadQuizzes();
   }
 
   Future<void> _loadQuizzes() async {
     final data = await ApiService.getQuizzes(widget.moduleId!);
-    setState(() {
-      quizzes = data;
-      isLoading = false;
-    });
+    setState(() { quizzes = data; isLoading = false; });
   }
 
   void _submitQuiz() async {
+    if (userAnswers.length < quizzes.length) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Jawab semua soal dulu King!')));
+      return;
+    }
+
     setState(() => isSubmitting = true);
     int correctCount = 0;
     int totalXpEarned = 0;
 
     for (int i = 0; i < quizzes.length; i++) {
-      String userAnswer = (userAnswers[i] ?? '').trim().toLowerCase();
-      String correctAnswer = (quizzes[i]['kunci_jawaban'] ?? '').trim().toLowerCase();
-      if (userAnswer == correctAnswer && userAnswer.isNotEmpty) {
+      int correctIdx = (quizzes[i]['jawaban_benar'] as num).toInt();
+      if (userAnswers[i] == correctIdx) {
         correctCount++;
-        totalXpEarned += (quizzes[i]['xp_reward'] as int? ?? 10); 
+        totalXpEarned += (quizzes[i]['xp_reward'] as int? ?? 10);
       }
     }
 
@@ -59,152 +69,106 @@ class _QuizScreenState extends State<QuizScreen> {
         Map<String, dynamic> userData = jsonDecode(userStr);
         String userId = userData['id'] ?? userData['_id'];
         
-        // Panggil fungsi addXP yang sekarang mengembalikan piala baru!
-        final result = await ApiService.addXp(userId, totalXpEarned);
+        await ApiService.addXp(userId, totalXpEarned);
         
-        // Tampilkan Popup Nilai dulu, dan tunggu sampai ditutup
+        // SIMPAN STATUS: Kuis ini sudah selesai
+        await prefs.setBool('quiz_done_${userId}_${widget.moduleId}', true);
+
         await _showResultDialog(
           title: 'Luar Biasa! 🎉',
-          message: 'Nilai kamu: ${score.toInt()}.\nBerhasil menjawab $correctCount dari ${quizzes.length} soal.\n\nDapat +$totalXpEarned XP!',
-          isSuccess: true,
+          message: 'Nilai: ${score.toInt()}\nXP: +$totalXpEarned\nStatus: SELESAI',
+          isSuccess: true
         );
-
-        // SETELAH POPUP DITUTUP, MUNCULKAN NOTIFIKASI ACHIEVEMENT (JIKA ADA)
-        if (result['success'] == true && result['new_achievements'] != null) {
-          List newAchievements = result['new_achievements'];
-          for (var ach in newAchievements) {
-            _showAchievementNotification(ach['judul'], ach['deskripsi']);
-          }
-        }
       }
     } else {
       await _showResultDialog(
-        title: 'Jangan Menyerah! 💪',
-        message: 'Nilai kamu: ${score.toInt()} (KKM: 80).\nBaru benar $correctCount dari ${quizzes.length} soal.\n\nPelajari lagi materi dan Coba Ulang.',
-        isSuccess: false,
+        title: 'Coba Lagi! 💪',
+        message: 'Nilai: ${score.toInt()} (KKM 80).\nKamu belum lulus.',
+        isSuccess: false
       );
     }
     setState(() => isSubmitting = false);
   }
 
-  // FUNGSI MEMUNCULKAN NOTIFIKASI PIALA (TARGET 5)
-  void _showAchievementNotification(String judul, String deskripsi) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.emoji_events, color: Colors.amber, size: 40),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('PENCAPAIAN TERBUKA!', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber, fontSize: 12)),
-                  Text(judul, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 16)),
-                  Text(deskripsi, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                ],
-              ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Kuis Pilihan Ganda"), backgroundColor: Colors.green, foregroundColor: Colors.white),
+      body: isLoading ? const Center(child: CircularProgressIndicator()) : Column(
+        children: [
+          if (hasFinished) 
+            Container(
+              width: double.infinity,
+              color: Colors.amber[100],
+              padding: const EdgeInsets.all(10),
+              child: const Text("⚠️ Kamu sudah mengerjakan kuis ini. Skor tidak akan bertambah lagi.", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
             ),
-          ],
-        ),
-        backgroundColor: Colors.green[900], // Warna hijau gelap biar elegan
-        duration: const Duration(seconds: 5),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 20, left: 20, right: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        elevation: 10,
-      )
-    );
-  }
-
-  Future<void> _showResultDialog({required String title, required String message, required bool isSuccess}) async {
-    // Tambahkan 'return showDialog' agar sistem menunggu user menekan tombol
-    return showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(title, style: TextStyle(color: isSuccess ? Colors.green : Colors.orange, fontWeight: FontWeight.bold)),
-        content: Text(message, style: const TextStyle(fontSize: 16)),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: isSuccess ? Colors.green : Colors.orange),
-            onPressed: () {
-              Navigator.pop(context); 
-              if (isSuccess) Navigator.pop(context); 
-            },
-            child: Text(isSuccess ? 'Kembali' : 'Coba Ulang', style: const TextStyle(color: Colors.white)),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: quizzes.length,
+              itemBuilder: (context, index) {
+                final q = quizzes[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Soal ${index + 1}", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 10),
+                        Text(q['pertanyaan'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 20),
+                        ...List.generate(4, (i) => _buildOption(index, i, q['opsi'][i])),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(20),
+            color: Colors.white,
+            child: SizedBox(width: double.infinity, child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: hasFinished ? Colors.grey : Colors.green),
+              onPressed: (isSubmitting || hasFinished) ? null : _submitQuiz,
+              child: Text(hasFinished ? "Kuis Sudah Selesai" : "Kumpulkan Jawaban", style: const TextStyle(color: Colors.white)),
+            )),
           )
         ],
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (widget.moduleId == null) {
-      return const Scaffold(body: Center(child: Text('Pilih materi dari tab Materi terlebih dahulu.', style: TextStyle(color: Colors.grey))));
-    }
-
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(title: const Text('Kuis Materi', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), backgroundColor: Colors.green, iconTheme: const IconThemeData(color: Colors.white)),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.green))
-          : quizzes.isEmpty
-              ? const Center(child: Text('Belum ada kuis.', style: TextStyle(color: Colors.grey)))
-              : Column(
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: quizzes.length,
-                        itemBuilder: (context, index) {
-                          final quiz = quizzes[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 20),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      CircleAvatar(radius: 14, backgroundColor: Colors.green, child: Text('${index + 1}', style: const TextStyle(color: Colors.white, fontSize: 14))),
-                                      const SizedBox(width: 10),
-                                      Text('${quiz['xp_reward']} XP', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text(quiz['pertanyaan'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                                  const SizedBox(height: 16),
-                                  TextField(
-                                    onChanged: (value) => userAnswers[index] = value,
-                                    decoration: InputDecoration(hintText: 'Ketik jawabanmu di sini...', border: OutlineInputBorder(borderRadius: BorderRadius.circular(10))),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      color: Colors.white,
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: isSubmitting ? null : _submitQuiz,
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(vertical: 16)),
-                          child: isSubmitting ? const CircularProgressIndicator(color: Colors.white) : const Text('Kumpulkan Jawaban', style: TextStyle(fontSize: 18, color: Colors.white)),
-                        ),
-                      ),
-                    )
-                  ],
-                ),
+  Widget _buildOption(int qIdx, int oIdx, String text) {
+    bool isSelected = userAnswers[qIdx] == oIdx;
+    return GestureDetector(
+      onTap: hasFinished ? null : () => setState(() => userAnswers[qIdx] = oIdx),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.green.withOpacity(0.1) : Colors.white,
+          border: Border.all(color: isSelected ? Colors.green : Colors.grey[300]!, width: 2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(radius: 12, backgroundColor: isSelected ? Colors.green : Colors.grey[300], child: Text(String.fromCharCode(65 + oIdx), style: const TextStyle(color: Colors.white, fontSize: 12))),
+            const SizedBox(width: 15),
+            Expanded(child: Text(text)),
+          ],
+        ),
+      ),
     );
+  }
+
+  Future<void> _showResultDialog({required String title, required String message, required bool isSuccess}) async {
+    return showDialog(context: context, barrierDismissible: false, builder: (context) => AlertDialog(
+      title: Text(title), content: Text(message), actions: [
+        TextButton(onPressed: () { Navigator.pop(context); if (isSuccess) Navigator.pop(context); }, child: Text(isSuccess ? "Selesai" : "Coba Lagi"))
+      ]));
   }
 }
