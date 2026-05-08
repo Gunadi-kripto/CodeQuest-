@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
-import 'login_screen.dart';
 import 'leaderboard_screen.dart';
 import 'materi_screen.dart';
 
@@ -19,7 +18,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<dynamic> leaderboard = [];
   bool isLoading = true;
 
-  // Data Quest untuk Slider
   final List<Map<String, String>> _allQuests = [
     {'title': 'Misi Harian:\nPython Loop', 'image': 'assets/python.png'},
     {'title': 'Misi Harian:\nJava Variable', 'image': 'assets/java.png'},
@@ -37,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _startQuestTimer();
   }
 
-  // Logika Timer 5 Detik
   void _startQuestTimer() {
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (mounted) {
@@ -50,36 +47,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel(); // Mencegah memory leak
+    _timer?.cancel();
     super.dispose();
   }
 
   Future<void> _loadData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? userStr = prefs.getString('user_data');
-
     if (userStr != null) {
       userData = jsonDecode(userStr);
     }
-
     final fetchedLeaderboard = await ApiService.getLeaderboard();
-
     if (mounted) {
       setState(() {
         leaderboard = fetchedLeaderboard;
         isLoading = false;
       });
-    }
-  }
-
-  void _logout() async {
-    await ApiService.logoutUser();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
-      );
     }
   }
 
@@ -89,27 +72,42 @@ class _HomeScreenState extends State<HomeScreen> {
     double progress = (currentXp % 100) / 100.0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
       body: userData == null || isLoading
           ? const Center(child: CircularProgressIndicator(color: Colors.green))
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              color: Colors.green,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(currentXp, progress),
-                    const SizedBox(height: 20),
-                    _buildContinueLearning(),
-                    const SizedBox(height: 25),
-                    _buildCurrentQuests(),
-                    const SizedBox(height: 25),
-                    _buildWeeklyLeaderboard(),
-                    const SizedBox(height: 40),
-                  ],
-                ),
+          : SizedBox.expand(
+              child: Stack(
+                children: [
+                  // ── LAYER 1: Background gambar coding penuh layar ──
+                  SizedBox.expand(
+                    child: Image.asset(
+                      'assets/coding_bg.png',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                    ),
+                  ),
+
+                  // ── LAYER 2: Konten scrollable di atas background ──
+                  RefreshIndicator(
+                    onRefresh: _loadData,
+                    color: Colors.green,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeader(currentXp, progress),
+                          const SizedBox(height: 20),
+                          _buildContinueLearning(),
+                          const SizedBox(height: 25),
+                          _buildCurrentQuests(),
+                          const SizedBox(height: 25),
+                          _buildWeeklyLeaderboard(),
+                          const SizedBox(height: 40),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
     );
@@ -198,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF2C3E50),
+          color: const Color(0xFF2C3E50).withValues(alpha: 0.92),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -229,9 +227,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= CURRENT QUESTS (DENGAN EFEK GESER) =================
+  // ================= CURRENT QUESTS =================
   Widget _buildCurrentQuests() {
-    final firstQuest = _allQuests[_questIndex];
+    final firstQuest  = _allQuests[_questIndex];
     final secondQuest = _allQuests[(_questIndex + 1) % _allQuests.length];
 
     return Column(
@@ -249,12 +247,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 800),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(1.2, 0.0), end: Offset.zero).animate(animation),
-                      child: FadeTransition(opacity: animation, child: child),
-                    );
-                  },
+                  transitionBuilder: (child, animation) => SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(1.2, 0), end: Offset.zero).animate(animation),
+                    child: FadeTransition(opacity: animation, child: child),
+                  ),
                   child: _buildQuestCard(firstQuest['title']!, firstQuest['image']!, key: ValueKey('q1_$_questIndex')),
                 ),
               ),
@@ -262,12 +258,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 800),
-                  transitionBuilder: (Widget child, Animation<double> animation) {
-                    return SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(1.2, 0.0), end: Offset.zero).animate(animation),
-                      child: FadeTransition(opacity: animation, child: child),
-                    );
-                  },
+                  transitionBuilder: (child, animation) => SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(1.2, 0), end: Offset.zero).animate(animation),
+                    child: FadeTransition(opacity: animation, child: child),
+                  ),
                   child: _buildQuestCard(secondQuest['title']!, secondQuest['image']!, key: ValueKey('q2_$_questIndex')),
                 ),
               ),
@@ -278,7 +272,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ================= HELPER KARTU QUEST =================
   Widget _buildQuestCard(String title, String imagePath, {Key? key}) {
     return GestureDetector(
       key: key,
@@ -287,9 +280,9 @@ class _HomeScreenState extends State<HomeScreen> {
         height: 160,
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withValues(alpha: 0.88),
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 3))],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -311,9 +304,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withValues(alpha: 0.88),
           borderRadius: BorderRadius.circular(25),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5))],
         ),
         child: Column(
           children: [
@@ -324,14 +317,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 TextButton(
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => LeaderboardScreen(leaderboard: leaderboard))),
                   child: const Text('Lihat Semua'),
-                )
+                ),
               ],
             ),
             const Divider(),
             ...topThree.asMap().entries.map((entry) {
               int index = entry.key;
-              var data = entry.value;
-              Color rankColor = index == 0 ? Colors.orangeAccent : (index == 1 ? Colors.blueGrey.shade300 : Colors.brown.shade400);
+              var data  = entry.value;
+              Color rankColor = index == 0
+                  ? Colors.orangeAccent
+                  : (index == 1 ? Colors.blueGrey.shade300 : Colors.brown.shade400);
 
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -340,26 +335,38 @@ class _HomeScreenState extends State<HomeScreen> {
                   leading: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(width: 24, child: Text('#${index + 1}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: rankColor))),
+                      SizedBox(
+                        width: 24,
+                        child: Text('#${index + 1}',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: rankColor)),
+                      ),
                       const SizedBox(width: 10),
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: Colors.green.shade100,
-                        backgroundImage: (data['avatar_url'] != null && data['avatar_url'] != "") ? NetworkImage(data['avatar_url']) : null,
-                        child: (data['avatar_url'] == null || data['avatar_url'] == "") ? const Icon(Icons.person, color: Colors.green, size: 20) : null,
+                        backgroundImage: (data['avatar_url'] != null && data['avatar_url'] != "")
+                            ? NetworkImage(data['avatar_url'])
+                            : null,
+                        child: (data['avatar_url'] == null || data['avatar_url'] == "")
+                            ? const Icon(Icons.person, color: Colors.green, size: 20)
+                            : null,
                       ),
                     ],
                   ),
-                  title: Text(data['nama_lengkap'] ?? 'User', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: Text('Level ${data['level'] ?? 1}', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                  title: Text(data['nama_lengkap'] ?? 'User',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  subtitle: Text('Level ${data['level'] ?? 1}',
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(10)),
-                    child: Text('${data['total_xp']} XP', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+                    decoration: BoxDecoration(
+                        color: Colors.green.shade50, borderRadius: BorderRadius.circular(10)),
+                    child: Text('${data['total_xp']} XP',
+                        style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

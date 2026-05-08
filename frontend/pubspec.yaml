@@ -80,6 +80,7 @@ flutter:
     - assets/java.png
     - assets/cpp.png
     - assets/html.png
+    - assets/coding_bg.png
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
