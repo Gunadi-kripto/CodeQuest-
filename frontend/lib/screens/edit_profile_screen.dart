@@ -3,51 +3,47 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; 
-import 'package:http/http.dart' as http; 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'login_screen.dart'; 
 import '../services/api_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
 
-  EditProfileScreen({required this.userData});
+  const EditProfileScreen({super.key, required this.userData});
 
   @override
   _EditProfileScreenState createState() => _EditProfileScreenState();
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  // PERBAIKAN 1: Menggunakan GlobalKey<FormState> yang benar
   final _formKey = GlobalKey<FormState>();
   
   late TextEditingController _nameController;
-  late TextEditingController _emailController;
+  late TextEditingController _bioController;
 
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
   bool _isLoading = false;
-
-  final Color greenAccent = Color(0xFF4CAF50); // Hijau solid sesuai tema
+  final Color greenTheme = const Color(0xFF4CAF50);
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.userData['username']);
-    _emailController = TextEditingController(text: widget.userData['email']);
+    _nameController = TextEditingController(text: widget.userData['nama_lengkap'] ?? widget.userData['username']);
+    _bioController = TextEditingController(text: widget.userData['bio'] ?? '');
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path); 
@@ -55,73 +51,149 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  // --- MENGGUNAKAN API_SERVICE BAWAAN ANDA ---
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
+      final userId = widget.userData['id'] ?? widget.userData['_id'];
 
-      if (token == null) throw Exception('Token not found. Please login.');
-
-      final url = Uri.parse('${ApiService.baseUrl}/user/profile');
-      
-      var request = http.MultipartRequest('PUT', url);
-      
-      request.headers.addAll({
-        'Authorization': 'Bearer $token',
-      });
-
-      request.fields['username'] = _nameController.text;
-      request.fields['email'] = _emailController.text;
-
-      if (_imageFile != null) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'profilePicture', 
-          _imageFile!.path,
-        ));
-      }
-
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile updated successfully!', style: TextStyle(color: Colors.white)), backgroundColor: greenAccent),
-        );
-        Navigator.pop(context, true); 
-      } else {
-        final respBody = await response.stream.bytesToString();
-        final data = json.decode(respBody);
-        throw Exception(data['message'] ?? 'Failed to update profile');
-      }
-
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString(), style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+      // Memanggil fungsi updateProfile dari api_service.dart Anda
+      final response = await ApiService.updateProfile(
+        userId,
+        _nameController.text,
+        _bioController.text,
+        _imageFile,
       );
+
+      if (response['success'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: const Text('Profil berhasil diperbarui!', style: TextStyle(color: Colors.white)), backgroundColor: greenTheme),
+          );
+          Navigator.pop(context, true); 
+        }
+      } else {
+        throw Exception(response['message'] ?? 'Gagal memperbarui profil');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''), style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  // --- MENGGUNAKAN API_SERVICE BAWAAN ANDA ---
+  Future<void> _deleteAccount(String password) async {
+    setState(() => _isLoading = true);
+    try {
+      final userId = widget.userData['id'] ?? widget.userData['_id'];
+
+      // Memanggil fungsi deleteAccount dari api_service.dart Anda (Wajib kirim password)
+      final response = await ApiService.deleteAccount(userId, password);
+
+      if (response['success'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Akun berhasil dihapus selamanya.'), backgroundColor: Colors.green),
+          );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+          );
+        }
+      } else {
+        throw Exception(response['message'] ?? 'Gagal menghapus akun. Password salah?');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''), style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // --- DIALOG KONFIRMASI HAPUS (DITAMBAH INPUT PASSWORD) ---
+  void _showDeleteConfirmation() {
+    final TextEditingController passwordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 10),
+            Text('Hapus Akun?', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Tindakan ini tidak dapat dibatalkan. Semua data Anda akan terhapus.'),
+            const SizedBox(height: 15),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Masukkan Password Anda',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () {
+              if (passwordController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Password harus diisi!'), backgroundColor: Colors.red)
+                );
+                return;
+              }
+              Navigator.pop(context); 
+              _deleteAccount(passwordController.text); 
+            },
+            child: const Text('Ya, Hapus Akun', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    String? currentProfilePic = widget.userData['profilePicture'];
+    String? currentProfilePic = widget.userData['avatar_url'] ?? widget.userData['profilePicture'];
 
     return Scaffold(
       backgroundColor: Colors.white, 
       appBar: AppBar(
-        title: Text('Edit Profile', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
+        title: const Text('Edit Profil', style: TextStyle(color: Colors.white, fontSize: 18)),
+        backgroundColor: greenTheme,
         elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: greenAccent))
+          ? Center(child: CircularProgressIndicator(color: greenTheme))
           : SingleChildScrollView(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -130,15 +202,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: Stack(
                         children: [
                           CircleAvatar(
-                            radius: 70,
-                            backgroundColor: Colors.grey[200],
+                            radius: 50,
+                            backgroundColor: Colors.green.withOpacity(0.2),
                             backgroundImage: _imageFile != null
                                 ? FileImage(_imageFile!) as ImageProvider
-                                : (currentProfilePic != null
-                                    ? NetworkImage('${ApiService.baseUrl}$currentProfilePic') as ImageProvider
+                                : (currentProfilePic != null && currentProfilePic.isNotEmpty
+                                    ? NetworkImage(currentProfilePic) as ImageProvider
                                     : null),
-                            child: (_imageFile == null && currentProfilePic == null)
-                                ? Icon(Icons.person, size: 70, color: Colors.grey)
+                            child: (_imageFile == null && (currentProfilePic == null || currentProfilePic.isEmpty))
+                                ? Icon(Icons.person, size: 50, color: greenTheme)
                                 : null,
                           ),
                           Positioned(
@@ -147,44 +219,56 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             child: GestureDetector(
                               onTap: _pickImage,
                               child: Container(
-                                height: 40,
-                                width: 40,
+                                height: 32,
+                                width: 32,
                                 decoration: BoxDecoration(
-                                  color: greenAccent,
+                                  color: greenTheme,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 3),
+                                  border: Border.all(color: Colors.white, width: 2),
                                 ),
-                                child: Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                                child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: 30),
+                    const SizedBox(height: 40),
 
                     TextFormField(
                       controller: _nameController,
                       decoration: InputDecoration(
-                        labelText: 'Full Name',
-                        border: OutlineInputBorder(),
-                        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: greenAccent)),
+                        labelText: 'Nama Lengkap',
+                        prefixIcon: const Icon(Icons.person), 
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10), 
+                          borderSide: BorderSide(color: greenTheme, width: 2)
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 15),
                       ),
-                      validator: (value) => value == null || value.isEmpty ? 'Please enter your name' : null,
+                      validator: (value) => value == null || value.isEmpty ? 'Nama tidak boleh kosong' : null,
                     ),
-                    SizedBox(height: 15),
+                    const SizedBox(height: 20),
 
                     TextFormField(
-                      controller: _emailController,
+                      controller: _bioController,
+                      maxLines: 3, 
                       decoration: InputDecoration(
-                        labelText: 'Email Address',
-                        border: OutlineInputBorder(),
-                        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: greenAccent)),
+                        labelText: 'Bio singkat',
+                        alignLabelWithHint: true, 
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.only(bottom: 45), 
+                          child: Icon(Icons.info),
+                        ),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10), 
+                          borderSide: BorderSide(color: greenTheme, width: 2)
+                        ),
                       ),
-                      validator: (value) => value == null || value.isEmpty ? 'Please enter your email' : null,
-                      keyboardType: TextInputType.emailAddress,
                     ),
-                    SizedBox(height: 30),
+                    const SizedBox(height: 35),
 
                     SizedBox(
                       width: double.infinity,
@@ -192,14 +276,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _saveProfile,
                         style: ElevatedButton.styleFrom(
-                          // PERBAIKAN 2: Menggunakan backgroundColor, bukan primary
-                          backgroundColor: greenAccent, 
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          backgroundColor: greenTheme, 
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: Text(
-                          _isLoading ? 'Saving...' : 'Save Changes',
-                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        child: const Text(
+                          'Simpan Perubahan',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
                         ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    TextButton(
+                      onPressed: _isLoading ? null : _showDeleteConfirmation,
+                      child: const Text(
+                        'Hapus Akun Permanen', 
+                        style: TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.bold)
                       ),
                     ),
                   ],
