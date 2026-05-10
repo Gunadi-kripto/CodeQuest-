@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../services/api_service.dart';
+import '../../services/api_service.dart';
 import 'materi_detail_screen.dart';
 
 class MateriScreen extends StatefulWidget {

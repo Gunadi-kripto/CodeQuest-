@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../../services/api_service.dart';
 
 class AdminManageKuis extends StatefulWidget {
   const AdminManageKuis({super.key});

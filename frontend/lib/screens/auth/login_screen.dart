@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../services/api_service.dart';
-import '../main.dart';
+import '../../services/api_service.dart';
+import '../../main.dart';
 import 'register_screen.dart';
-import 'admin_main_screen.dart';
+import '../admin/admin_main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
