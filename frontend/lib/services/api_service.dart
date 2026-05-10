@@ -161,6 +161,13 @@ class ApiService {
       final response = await http.post(Uri.parse('$baseUrl/auth/verify-register'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'email': email, 'otp': otp}));
       return {'statusCode': response.statusCode, ...jsonDecode(response.body)};
     } catch (e) { return {'statusCode': 500, 'message': 'Gagal server'}; }
+    
+  }
+  static Future<bool> adminDeleteUser(String userId) async {
+    try {
+      final res = await http.delete(Uri.parse('$baseUrl/users/admin/force-delete/$userId'));
+      return res.statusCode == 200;
+    } catch (e) { return false; }
   }
 
   static Future<Map<String, dynamic>> resendOTP(String email) async {
@@ -297,7 +304,7 @@ class ApiService {
   }
 
   // ==========================================
-  // 5. FUNGSI KUIS & XP
+  // 5. FUNGSI KUIS (QUIZ) - MULTIPLE SOAL V3
   // ==========================================
 
   static Future<List<dynamic>> getQuizzes(String moduleId) async {
@@ -307,6 +314,46 @@ class ApiService {
       return [];
     } catch (e) { return []; }
   }
+
+  static Future<bool> addQuiz(String moduleId, List<Map<String, dynamic>> daftarSoal, int xp) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/quizzes'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'module_id': moduleId,
+          'daftar_soal': daftarSoal,
+          'xp_reward': xp
+        })
+      );
+      return res.statusCode == 201;
+    } catch (e) { return false; }
+  }
+
+  static Future<bool> updateQuiz(String quizId, List<Map<String, dynamic>> daftarSoal, int xp) async {
+    try {
+      final res = await http.put(
+        Uri.parse('$baseUrl/quizzes/$quizId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'daftar_soal': daftarSoal,
+          'xp_reward': xp
+        })
+      );
+      return res.statusCode == 200;
+    } catch (e) { return false; }
+  }
+
+  static Future<bool> deleteQuiz(String quizId) async {
+    try {
+      final res = await http.delete(Uri.parse('$baseUrl/quizzes/$quizId'));
+      return res.statusCode == 200;
+    } catch (e) { return false; }
+  }
+
+  // ==========================================
+  // 6. FUNGSI XP & PROGRESS
+  // ==========================================
 
   static Future<Map<String, dynamic>> addXp(String userId, int xpToAdd) async {
     try {
@@ -327,52 +374,8 @@ class ApiService {
     } catch (e) { return {'success': false}; }
   }
 
-  // UPDATE: Fungsi addQuiz sekarang mendukung Opsi Pilihan Ganda
-  static Future<bool> addQuiz(String moduleId, String pertanyaan, List<String> opsi, int jawabanBenar, String hint, int xp) async {
-    try {
-      final res = await http.post(
-        Uri.parse('$baseUrl/quizzes'), 
-        headers: {'Content-Type': 'application/json'}, 
-        body: jsonEncode({
-          'module_id': moduleId, 
-          'pertanyaan': pertanyaan, 
-          'opsi': opsi,
-          'jawaban_benar': jawabanBenar,
-          'hint': hint, 
-          'xp_reward': xp
-        })
-      );
-      return res.statusCode == 201;
-    } catch (e) { return false; }
-  }
-
-  // UPDATE: Fungsi updateQuiz sekarang mendukung Opsi Pilihan Ganda
-  static Future<bool> updateQuiz(String quizId, String pertanyaan, List<String> opsi, int jawabanBenar, String hint, int xp) async {
-    try {
-      final res = await http.put(
-        Uri.parse('$baseUrl/quizzes/$quizId'), 
-        headers: {'Content-Type': 'application/json'}, 
-        body: jsonEncode({
-          'pertanyaan': pertanyaan, 
-          'opsi': opsi,
-          'jawaban_benar': jawabanBenar,
-          'hint': hint, 
-          'xp_reward': xp
-        })
-      );
-      return res.statusCode == 200;
-    } catch (e) { return false; }
-  }
-
-  static Future<bool> deleteQuiz(String quizId) async {
-    try {
-      final res = await http.delete(Uri.parse('$baseUrl/quizzes/$quizId'));
-      return res.statusCode == 200;
-    } catch (e) { return false; }
-  }
-
   // ==========================================
-  // 6. FUNGSI ACHIEVEMENTS (PIALA)
+  // 7. FUNGSI ACHIEVEMENTS (PIALA)
   // ==========================================
 
   static Future<List<dynamic>> getAchievements() async {
@@ -400,17 +403,6 @@ class ApiService {
   static Future<bool> deleteAchievement(String id) async {
     try {
       final res = await http.delete(Uri.parse('$baseUrl/achievements/$id'));
-      return res.statusCode == 200;
-    } catch (e) { return false; }
-  }
-
-  // ==========================================
-  // 7. FUNGSI ADMIN EXTRA
-  // ==========================================
-
-  static Future<bool> adminDeleteUser(String userId) async {
-    try {
-      final res = await http.delete(Uri.parse('$baseUrl/users/admin/force-delete/$userId'));
       return res.statusCode == 200;
     } catch (e) { return false; }
   }
