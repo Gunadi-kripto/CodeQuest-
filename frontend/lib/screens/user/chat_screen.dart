@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/api_service.dart';
+import '../../services/api_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final String currentUserId;

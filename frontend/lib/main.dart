@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Wajib ada
-import 'dart:convert';
+
 
 // Import file layar
-import 'screens/home_screen.dart';
-import 'screens/materi_screen.dart';
-import 'screens/quiz_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/quiz_list_screen.dart';
+import 'screens/user/home_screen.dart';
+import 'screens/user/materi_screen.dart';
+import 'screens/user/profile_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/user/quiz_list_screen.dart';
 
 void main() {
   runApp(const CodeQuestApp());

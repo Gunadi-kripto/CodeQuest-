@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../../services/api_service.dart';
 import 'chat_screen.dart'; // IMPORT LAYAR CHAT
 
 class SocialScreen extends StatefulWidget {
