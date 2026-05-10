@@ -35,4 +35,14 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Endpoint untuk menghapus bahasa
+router.delete('/:id', async (req, res) => {
+  try {
+    await Language.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: 'Bahasa berhasil dihapus!' });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal menghapus bahasa.' });
+  }
+});
+
 module.exports = router;
