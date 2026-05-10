@@ -159,7 +159,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
+      body: Stack(
+        children: [
+          // ── Background coding ──
+          SizedBox.expand(
+            child: Image.asset(
+              'assets/coding_bg.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+            ),
+          ),
+
+          // ── Konten di atas background ──
+          RefreshIndicator(
         onRefresh: () async => _loadUserData(),
         color: Colors.green,
         child: SingleChildScrollView(
@@ -190,6 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Card(
                   elevation: 2,
+                  color: Colors.white.withValues(alpha: 0.92),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
@@ -230,6 +243,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Card(
                   elevation: 2,
+                  color: Colors.white.withValues(alpha: 0.92),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
@@ -317,24 +331,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
 
-              const Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Divider(),
-              ),
-              ListTile(
-                leading: const Icon(Icons.info_outline, color: Colors.green),
-                title: const Text('Bio', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(displayBio),
-              ),
-              ListTile(
-                leading: const Icon(Icons.email_outlined, color: Colors.green),
-                title: const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(userData!['email'] ?? ''),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: Divider(),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.info_outline, color: Colors.green),
+                        title: const Text('Bio', style: TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(displayBio),
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.email_outlined, color: Colors.green),
+                        title: const Text('Email', style: TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(userData!['email'] ?? ''),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
             ],
           ),
         ),
+      ),
+        ],
       ),
     );
   }
@@ -345,7 +374,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         children: [
           CircleAvatar(
-            backgroundColor: isUnlocked ? Colors.orange.withOpacity(0.15) : Colors.grey.withOpacity(0.1),
+            backgroundColor: isUnlocked ? Colors.orange.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.1),
             child: Icon(icon, color: isUnlocked ? Colors.orange : Colors.grey[400]),
           ),
           const SizedBox(height: 5),
