@@ -22,6 +22,16 @@ class ApiService {
     }
   }
 
+  // Tambahkan fungsi ini di api_service.dart
+  static Future<bool> deleteLanguage(String id) async {
+    try {
+      final res = await http.delete(Uri.parse('$baseUrl/language/$id'));
+      return res.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   static Future<Map<String, dynamic>> addLanguage(String namaBahasa, String warnaTema, File iconFile) async {
     try {
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/language'));
@@ -121,7 +131,10 @@ class ApiService {
     try {
       final res = await http.delete(Uri.parse('$baseUrl/modules/$id'));
       return res.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      print("Error delete module: $e");
+      return false;
+    }
   }
 
   // ==========================================
