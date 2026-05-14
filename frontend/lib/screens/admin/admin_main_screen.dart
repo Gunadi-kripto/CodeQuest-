@@ -42,10 +42,18 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Hapus Bahasa?", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-        content: Text("Yakin ingin menghapus bahasa '$nama'? Ini akan membersihkan ikon yang nyangkut di dashboard."),
+        title: const Text(
+          "Hapus Bahasa?",
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          "Yakin ingin menghapus bahasa '$nama'? Ini akan membersihkan ikon yang nyangkut di dashboard.",
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal"),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
@@ -54,7 +62,10 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                 Navigator.pop(context);
                 _loadLanguages();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Bahasa berhasil dihapus!"), backgroundColor: Colors.green),
+                  const SnackBar(
+                    content: Text("Bahasa berhasil dihapus!"),
+                    backgroundColor: Colors.green,
+                  ),
                 );
               }
             },
@@ -69,31 +80,39 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     setState(() {
       _selectedIndex = index;
     });
-    if (index == 1) _loadLanguages(); // Refresh data bahasa saat masuk tab materi
+    if (index == 1)
+      _loadLanguages(); // Refresh data bahasa saat masuk tab materi
   }
 
   void _logout() async {
     await ApiService.logoutUser();
     if (mounted) {
       Navigator.pushAndRemoveUntil(
-        context, 
-        MaterialPageRoute(builder: (context) => const LoginScreen()), 
-        (route) => false
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
       );
     }
   }
 
   // Widget khusus untuk menampilkan Grid Bahasa di Tab Materi
   Widget _buildLanguageGrid() {
-    if (isLoadingLang) return const Center(child: CircularProgressIndicator(color: Colors.green));
-    if (languages.isEmpty) return const Center(child: Text("Belum ada bahasa."));
+    if (isLoadingLang)
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.green),
+      );
+    if (languages.isEmpty)
+      return const Center(child: Text("Belum ada bahasa."));
 
     return RefreshIndicator(
       onRefresh: _loadLanguages,
       child: GridView.builder(
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 0.9,
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 0.9,
         ),
         itemCount: languages.length,
         itemBuilder: (context, index) {
@@ -110,20 +129,35 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
                 ),
               ).then((_) => _loadLanguages());
             },
-            onLongPress: () => _confirmDeleteLanguage(lang['_id'], lang['nama_bahasa']),
+            onLongPress: () =>
+                _confirmDeleteLanguage(lang['_id'], lang['nama_bahasa']),
             child: Card(
               elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (lang['icon_url'] != null)
-                    Image.network(lang['icon_url'], height: 50, width: 50, errorBuilder: (c, e, s) => const Icon(Icons.code, size: 40))
+                    Image.network(
+                      lang['icon_url'],
+                      height: 50,
+                      width: 50,
+                      errorBuilder: (c, e, s) =>
+                          const Icon(Icons.code, size: 40),
+                    )
                   else
                     const Icon(Icons.language, size: 40, color: Colors.green),
                   const SizedBox(height: 10),
-                  Text(lang['nama_bahasa'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const Text("Tahan untuk hapus", style: TextStyle(fontSize: 9, color: Colors.grey)),
+                  Text(
+                    lang['nama_bahasa'] ?? '',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
+                    "Tahan untuk hapus",
+                    style: TextStyle(fontSize: 9, color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -145,19 +179,25 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Portal Admin', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'System Admin',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.green,
         actions: [
-          if (_selectedIndex == 1) // Tombol tambah bahasa hanya muncul di tab materi
+          if (_selectedIndex ==
+              1) // Tombol tambah bahasa hanya muncul di tab materi
             IconButton(
               icon: const Icon(Icons.add_circle, color: Colors.white),
               onPressed: () => Navigator.push(
-                context, 
-                MaterialPageRoute(builder: (context) => const AdminLanguageScreen())
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AdminLanguageScreen(),
+                ),
               ).then((_) => _loadLanguages()),
             ),
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white), 
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: _logout,
             tooltip: 'Logout',
           ),
@@ -169,10 +209,13 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
           BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Materi'),
           BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Kuis'),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Piala'), 
+          BottomNavigationBarItem(
+            icon: Icon(Icons.emoji_events),
+            label: 'Piala',
+          ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.green, 
+        selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
