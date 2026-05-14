@@ -928,6 +928,147 @@ class ApiService {
     }
   }
 
+  // ================= ACHIEVEMENT V2 - UPLOAD BADGE =================
+  // Dipakai admin_manage_achievements.dart untuk upload badge dari File Manager / Google Drive
+
+  static Future<Map<String, dynamic>> addAchievementV2({
+    required String languageId,
+    required String judul,
+    required String deskripsi,
+    required String syaratTipe,
+    required int syaratNilai,
+    required int xpReward,
+    required String rarity,
+    required File iconFile,
+  }) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/achievements'),
+      );
+
+      request.fields['language_id'] = languageId;
+      request.fields['judul'] = judul;
+      request.fields['deskripsi'] = deskripsi;
+      request.fields['syarat_tipe'] = syaratTipe;
+      request.fields['syarat_nilai'] = syaratNilai.toString();
+      request.fields['xp_reward'] = xpReward.toString();
+      request.fields['rarity'] = rarity;
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'icon_file',
+          iconFile.path,
+        ),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.body.contains('<!DOCTYPE html>')) {
+        return {
+          'success': false,
+          'message': 'Server Error. Cek endpoint POST /api/achievements',
+        };
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'data': response.body.isNotEmpty ? jsonDecode(response.body) : null,
+        };
+      }
+
+      Map<String, dynamic> data = {};
+      try {
+        data = jsonDecode(response.body);
+      } catch (_) {}
+
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Gagal menambah achievement',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Koneksi error: $e',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateAchievementV2({
+    required String id,
+    required String languageId,
+    required String judul,
+    required String deskripsi,
+    required String syaratTipe,
+    required int syaratNilai,
+    required int xpReward,
+    required String rarity,
+    File? iconFile,
+    String? existingIconUrl,
+  }) async {
+    try {
+      final request = http.MultipartRequest(
+        'PUT',
+        Uri.parse('$baseUrl/achievements/$id'),
+      );
+
+      request.fields['language_id'] = languageId;
+      request.fields['judul'] = judul;
+      request.fields['deskripsi'] = deskripsi;
+      request.fields['syarat_tipe'] = syaratTipe;
+      request.fields['syarat_nilai'] = syaratNilai.toString();
+      request.fields['xp_reward'] = xpReward.toString();
+      request.fields['rarity'] = rarity;
+
+      if (existingIconUrl != null && existingIconUrl.isNotEmpty) {
+        request.fields['existing_icon'] = existingIconUrl;
+      }
+
+      if (iconFile != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'icon_file',
+            iconFile.path,
+          ),
+        );
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.body.contains('<!DOCTYPE html>')) {
+        return {
+          'success': false,
+          'message': 'Server Error. Cek endpoint PUT /api/achievements/$id',
+        };
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'data': response.body.isNotEmpty ? jsonDecode(response.body) : null,
+        };
+      }
+
+      Map<String, dynamic> data = {};
+      try {
+        data = jsonDecode(response.body);
+      } catch (_) {}
+
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Gagal update achievement',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Koneksi error: $e',
+      };
+    }
+  }
+
   // ==========================================
   // 8. FUNGSI CHAT
   // ==========================================
