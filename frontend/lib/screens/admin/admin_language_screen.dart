@@ -162,7 +162,7 @@ class _AdminLanguageScreenState extends State<AdminLanguageScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
-        title: const Text('Portal Admin Kuis', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text('System add Quiz', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white, elevation: 0,
         automaticallyImplyLeading: false,
       ),
