@@ -1,4 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../services/api_service.dart';
 
 class AdminManageKuis extends StatefulWidget {
@@ -123,22 +128,34 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFFF5F6F8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         title: const Text(
           'Hapus Kuis?',
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        content: const Text('Kuis yang dihapus tidak bisa dikembalikan.'),
+        content: const Text(
+          'Kuis yang dihapus tidak bisa dikembalikan.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+            child: const Text(
+              'Batal',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () async {
               final success = await ApiService.deleteQuiz(quizId);
@@ -169,7 +186,10 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
                 );
               }
             },
-            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Hapus',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -190,19 +210,31 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
+
               const SizedBox(height: 22),
+
               _buildSelectorCard(),
+
               const SizedBox(height: 22),
+
               _buildQuizListHeader(),
+
               const SizedBox(height: 14),
+
               _buildQuizContent(),
+
               const SizedBox(height: 18),
+
               SizedBox(
                 width: double.infinity,
                 height: 58,
                 child: ElevatedButton.icon(
-                  onPressed: selectedModule == null ? null : () => _showQuizForm(),
-                  icon: const Icon(Icons.add, color: Colors.white),
+                  onPressed:
+                      selectedModule == null ? null : () => _showQuizForm(),
+                  icon: const Icon(
+                    Icons.add,
+                    color: Colors.white,
+                  ),
                   label: const Text(
                     'Tambah Kuis',
                     style: TextStyle(
@@ -215,10 +247,13 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
                     backgroundColor: Colors.green,
                     disabledBackgroundColor: Colors.grey.shade300,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
                   ),
                 ),
               ),
+
               const SizedBox(height: 110),
             ],
           ),
@@ -244,7 +279,11 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
               ),
             ],
           ),
-          child: const Icon(Icons.quiz_outlined, color: Colors.white, size: 34),
+          child: const Icon(
+            Icons.quiz_outlined,
+            color: Colors.white,
+            size: 34,
+          ),
         ),
         const SizedBox(width: 16),
         const Expanded(
@@ -253,12 +292,18 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
             children: [
               Text(
                 'Kuis',
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               SizedBox(height: 4),
               Text(
                 'Kelola soal pembelajaran',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
@@ -273,17 +318,37 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: Colors.grey.shade200,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Bahasa Pemrograman', style: TextStyle(color: Colors.grey, fontSize: 13)),
+          const Text(
+            'Bahasa Pemrograman',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 13,
+            ),
+          ),
+
           const SizedBox(height: 8),
+
           _buildLanguageDropdown(),
+
           const SizedBox(height: 16),
-          const Text('Materi / Bab', style: TextStyle(color: Colors.grey, fontSize: 13)),
+
+          const Text(
+            'Materi / Bab',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 13,
+            ),
+          ),
+
           const SizedBox(height: 8),
+
           _buildModuleDropdown(),
         ],
       ),
@@ -304,7 +369,9 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: Colors.grey.shade200,
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<dynamic>(
@@ -323,7 +390,9 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
                       lang['nama_bahasa'] ?? 'Tanpa Nama',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -331,7 +400,9 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
             );
           }).toList(),
           onChanged: (value) {
-            if (value != null) _selectLanguage(value);
+            if (value != null) {
+              _selectLanguage(value);
+            }
           },
         ),
       ),
@@ -356,7 +427,9 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: Colors.grey.shade200,
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<dynamic>(
@@ -375,7 +448,11 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
                       color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.menu_book_rounded, color: Colors.green, size: 19),
+                    child: const Icon(
+                      Icons.menu_book_rounded,
+                      color: Colors.green,
+                      size: 19,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -383,7 +460,9 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
                       mod['judul_modul'] ?? 'Tanpa Judul',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -391,7 +470,9 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
             );
           }).toList(),
           onChanged: (value) {
-            if (value != null) _selectModule(value);
+            if (value != null) {
+              _selectModule(value);
+            }
           },
         ),
       ),
@@ -404,7 +485,10 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
         const Expanded(
           child: Text(
             'Daftar Kuis',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         Container(
@@ -414,7 +498,10 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
             color: Colors.green.withOpacity(0.08),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: const Icon(Icons.format_list_bulleted_rounded, color: Colors.green),
+          child: const Icon(
+            Icons.format_list_bulleted_rounded,
+            color: Colors.green,
+          ),
         ),
       ],
     );
@@ -425,7 +512,9 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(35),
-          child: CircularProgressIndicator(color: Colors.green),
+          child: CircularProgressIndicator(
+            color: Colors.green,
+          ),
         ),
       );
     }
@@ -450,7 +539,7 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
 
   Widget _buildQuizCard(dynamic quiz) {
     final List soal = quiz['daftar_soal'] ?? [];
-    final int xp = quiz['xp_reward'] ?? 0;
+    final int xp = _toInt(quiz['xp_reward']);
     final String moduleName = selectedModule?['judul_modul'] ?? 'Materi';
 
     return Container(
@@ -470,7 +559,9 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
       child: Row(
         children: [
           _quizLanguageIcon(),
+
           const SizedBox(width: 14),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,21 +570,34 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
                   moduleName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+
                 const SizedBox(height: 6),
+
                 Text(
                   '${soal.length} Soal • $xp XP',
-                  style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600, fontSize: 13),
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
+
                 const SizedBox(height: 14),
+
                 Row(
                   children: [
                     _smallActionButton(
                       label: 'Edit',
                       icon: Icons.edit,
                       color: Colors.green,
-                      onTap: () => _showQuizForm(quiz: Map<String, dynamic>.from(quiz)),
+                      onTap: () => _showQuizForm(
+                        quiz: Map<String, dynamic>.from(quiz),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     _smallActionButton(
@@ -512,6 +616,12 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
     );
   }
 
+  int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '0') ?? 0;
+  }
+
   Widget _smallActionButton({
     required String label,
     required IconData icon,
@@ -522,17 +632,33 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 8,
+        ),
         decoration: BoxDecoration(
           color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.45)),
+          border: Border.all(
+            color: color.withOpacity(0.45),
+          ),
         ),
         child: Row(
           children: [
-            Icon(icon, color: color, size: 16),
+            Icon(
+              icon,
+              color: color,
+              size: 16,
+            ),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
       ),
@@ -549,8 +675,22 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
         borderRadius: BorderRadius.circular(10),
       ),
       child: iconUrl != null && iconUrl.isNotEmpty
-          ? Image.network(iconUrl, fit: BoxFit.contain)
-          : const Icon(Icons.code_rounded, color: Colors.green, size: 19),
+          ? Image.network(
+              iconUrl,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(
+                  Icons.code_rounded,
+                  color: Colors.green,
+                  size: 19,
+                );
+              },
+            )
+          : const Icon(
+              Icons.code_rounded,
+              color: Colors.green,
+              size: 19,
+            ),
     );
   }
 
@@ -566,8 +706,22 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
         borderRadius: BorderRadius.circular(18),
       ),
       child: iconUrl != null && iconUrl.isNotEmpty
-          ? Image.network(iconUrl, fit: BoxFit.contain)
-          : const Icon(Icons.quiz_outlined, color: Colors.green, size: 36),
+          ? Image.network(
+              iconUrl,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(
+                  Icons.quiz_outlined,
+                  color: Colors.green,
+                  size: 36,
+                );
+              },
+            )
+          : const Icon(
+              Icons.quiz_outlined,
+              color: Colors.green,
+              size: 36,
+            ),
     );
   }
 
@@ -584,10 +738,18 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
           const SizedBox(
             width: 18,
             height: 18,
-            child: CircularProgressIndicator(color: Colors.green, strokeWidth: 2),
+            child: CircularProgressIndicator(
+              color: Colors.green,
+              strokeWidth: 2,
+            ),
           ),
           const SizedBox(width: 12),
-          Text(text, style: const TextStyle(color: Colors.grey)),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.grey,
+            ),
+          ),
         ],
       ),
     );
@@ -601,7 +763,12 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
         color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Text(text, style: const TextStyle(color: Colors.grey)),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.grey,
+        ),
+      ),
     );
   }
 
@@ -612,13 +779,25 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: Colors.grey.shade200,
+        ),
       ),
       child: Column(
         children: [
-          Icon(Icons.quiz_outlined, color: Colors.grey.shade400, size: 46),
+          Icon(
+            Icons.quiz_outlined,
+            color: Colors.grey.shade400,
+            size: 46,
+          ),
           const SizedBox(height: 10),
-          Text(text, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+          Text(
+            text,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -644,6 +823,7 @@ class QuizBuilderSheet extends StatefulWidget {
 class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
   final TextEditingController xpController = TextEditingController(text: '50');
   final List<QuestionFormData> questions = [];
+
   bool isSaving = false;
 
   bool get isEditMode => widget.existingQuiz != null;
@@ -653,11 +833,19 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
     super.initState();
 
     if (widget.existingQuiz != null) {
-      xpController.text = (widget.existingQuiz!['xp_reward'] ?? 50).toString();
+      xpController.text =
+          (widget.existingQuiz!['xp_reward'] ?? 50).toString();
+
       final List soal = widget.existingQuiz!['daftar_soal'] ?? [];
 
       for (var item in soal) {
-        questions.add(QuestionFormData.fromMap(Map<String, dynamic>.from(item)));
+        if (item is Map) {
+          questions.add(
+            QuestionFormData.fromMap(
+              Map<String, dynamic>.from(item),
+            ),
+          );
+        }
       }
     }
 
@@ -669,9 +857,11 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
   @override
   void dispose() {
     xpController.dispose();
+
     for (final q in questions) {
       q.dispose();
     }
+
     super.dispose();
   }
 
@@ -695,6 +885,26 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
     setState(() {
       questions[index].dispose();
       questions.removeAt(index);
+    });
+  }
+
+  Future<void> _pickQuestionImage(QuestionFormData question) async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (picked != null) {
+      setState(() {
+        question.imageFile = File(picked.path);
+      });
+    }
+  }
+
+  void _removeQuestionImage(QuestionFormData question) {
+    setState(() {
+      question.imageFile = null;
+      question.imageUrl = '';
     });
   }
 
@@ -747,18 +957,25 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isEditMode ? 'Kuis berhasil diupdate' : 'Kuis berhasil disimpan'),
+          content: Text(
+            isEditMode ? 'Kuis berhasil diupdate' : 'Kuis berhasil disimpan',
+          ),
           backgroundColor: Colors.green,
         ),
       );
     } else {
-      _showError(isEditMode ? 'Gagal update kuis' : 'Gagal menyimpan kuis');
+      _showError(
+        isEditMode ? 'Gagal update kuis' : 'Gagal menyimpan kuis',
+      );
     }
   }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
     );
   }
 
@@ -768,11 +985,14 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
       height: MediaQuery.of(context).size.height * 0.94,
       decoration: const BoxDecoration(
         color: Color(0xFFF5F6F8),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
       ),
       child: Column(
         children: [
           const SizedBox(height: 12),
+
           Container(
             width: 48,
             height: 5,
@@ -781,14 +1001,19 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
               borderRadius: BorderRadius.circular(20),
             ),
           ),
+
           const SizedBox(height: 16),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Row(
               children: [
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back_rounded, color: Colors.green),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.green,
+                  ),
                 ),
                 Expanded(
                   child: Text(
@@ -805,6 +1030,7 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
               ],
             ),
           ),
+
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.only(
@@ -817,34 +1043,51 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _selectedMaterialBox(),
+
                   const SizedBox(height: 18),
+
                   _xpInput(),
+
                   const SizedBox(height: 22),
+
                   Row(
                     children: [
                       const Expanded(
                         child: Text(
                           'Soal Kuis',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           '${questions.length} Soal • ${int.tryParse(xpController.text) ?? 0} XP',
-                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 14),
+
                   ...questions.asMap().entries.map((entry) {
                     return _questionCard(entry.key, entry.value);
                   }),
+
                   InkWell(
                     onTap: _addQuestion,
                     borderRadius: BorderRadius.circular(16),
@@ -854,23 +1097,37 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
                       decoration: BoxDecoration(
                         color: Colors.green.withOpacity(0.04),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.green, style: BorderStyle.solid),
+                        border: Border.all(
+                          color: Colors.green,
+                          style: BorderStyle.solid,
+                        ),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add, color: Colors.green),
+                          Icon(
+                            Icons.add,
+                            color: Colors.green,
+                          ),
                           SizedBox(width: 8),
-                          Text('Tambah Soal', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                          Text(
+                            'Tambah Soal',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 90),
                 ],
               ),
             ),
           ),
+
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -892,18 +1149,34 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
-                    : const Icon(Icons.save_outlined, color: Colors.white),
+                    : const Icon(
+                        Icons.save_outlined,
+                        color: Colors.white,
+                      ),
                 label: Text(
-                  isSaving ? 'Menyimpan...' : 'Simpan Kuis',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  isSaving
+                      ? 'Menyimpan...'
+                      : isEditMode
+                          ? 'Update Kuis'
+                          : 'Simpan Kuis',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   disabledBackgroundColor: Colors.grey.shade300,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                 ),
               ),
             ),
@@ -930,20 +1203,32 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.menu_book_rounded, color: Colors.green),
+            child: const Icon(
+              Icons.menu_book_rounded,
+              color: Colors.green,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Materi Terpilih', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+                const Text(
+                  'Materi Terpilih',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
                 const SizedBox(height: 3),
                 Text(
                   widget.module['judul_modul'] ?? 'Tanpa Judul',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -957,27 +1242,44 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('XP Reward', style: TextStyle(color: Colors.grey, fontSize: 13)),
+        const Text(
+          'XP Reward',
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 13,
+          ),
+        ),
+
         const SizedBox(height: 8),
+
         TextField(
           controller: xpController,
           keyboardType: TextInputType.number,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.stars_outlined, color: Colors.grey),
+            prefixIcon: const Icon(
+              Icons.stars_outlined,
+              color: Colors.grey,
+            ),
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(
+                color: Colors.grey.shade200,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(
+                color: Colors.grey.shade200,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: const BorderSide(color: Colors.green),
+              borderSide: const BorderSide(
+                color: Colors.green,
+              ),
             ),
           ),
         ),
@@ -1008,30 +1310,84 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
               Expanded(
                 child: Text(
                   'Soal ${index + 1}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               IconButton(
                 onPressed: () => _removeQuestion(index),
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.red,
+                ),
               ),
             ],
           ),
+
           const SizedBox(height: 8),
-          _field(question.questionController, 'Pertanyaan', 'Contoh: Apa fungsi print()?'),
+
+          _field(
+            question.questionController,
+            'Pertanyaan',
+            'Contoh: Apa fungsi print()?',
+          ),
+
+          const SizedBox(height: 12),
+
+          _questionImageBox(question),
+
           const SizedBox(height: 14),
-          const Text('Pilihan Jawaban', style: TextStyle(color: Colors.grey, fontSize: 13)),
+
+          const Text(
+            'Pilihan Jawaban',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 13,
+            ),
+          ),
+
           const SizedBox(height: 8),
-          _optionField('A', question.optionAController),
+
+          _optionField(
+            'A',
+            question.optionAController,
+          ),
+
           const SizedBox(height: 8),
-          _optionField('B', question.optionBController),
+
+          _optionField(
+            'B',
+            question.optionBController,
+          ),
+
           const SizedBox(height: 8),
-          _optionField('C', question.optionCController),
+
+          _optionField(
+            'C',
+            question.optionCController,
+          ),
+
           const SizedBox(height: 8),
-          _optionField('D', question.optionDController),
+
+          _optionField(
+            'D',
+            question.optionDController,
+          ),
+
           const SizedBox(height: 16),
-          const Text('Jawaban Benar', style: TextStyle(color: Colors.grey, fontSize: 13)),
+
+          const Text(
+            'Jawaban Benar',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 13,
+            ),
+          ),
+
           const SizedBox(height: 10),
+
           Row(
             children: ['A', 'B', 'C', 'D'].map((answer) {
               final selected = question.correctAnswer == answer;
@@ -1051,7 +1407,9 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
                       decoration: BoxDecoration(
                         color: selected ? Colors.green : Colors.white,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: selected ? Colors.green : Colors.grey.shade300),
+                        border: Border.all(
+                          color: selected ? Colors.green : Colors.grey.shade300,
+                        ),
                       ),
                       child: Center(
                         child: Text(
@@ -1073,12 +1431,138 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
     );
   }
 
-  Widget _field(TextEditingController controller, String label, String hint) {
+  Widget _questionImageBox(QuestionFormData question) {
+    final bool hasLocalImage = question.imageFile != null;
+    final bool hasNetworkImage = question.imageUrl.trim().isNotEmpty;
+
+    return Column(
+      children: [
+        if (hasLocalImage || hasNetworkImage)
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: hasLocalImage
+                    ? Image.file(
+                        question.imageFile!,
+                        width: double.infinity,
+                        height: 160,
+                        fit: BoxFit.cover,
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: question.imageUrl,
+                        width: double.infinity,
+                        height: 160,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          width: double.infinity,
+                          height: 160,
+                          color: Colors.grey.shade100,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.green,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          width: double.infinity,
+                          height: 160,
+                          color: Colors.grey.shade100,
+                          child: const Icon(
+                            Icons.broken_image,
+                            color: Colors.grey,
+                            size: 40,
+                          ),
+                        ),
+                      ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: InkWell(
+                  onTap: () => _removeQuestionImage(question),
+                  borderRadius: BorderRadius.circular(30),
+                  child: Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+        if (hasLocalImage || hasNetworkImage) const SizedBox(height: 10),
+
+        InkWell(
+          onTap: () => _pickQuestionImage(question),
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Colors.green.withOpacity(0.35),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.image_outlined,
+                  color: Colors.green,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    hasLocalImage || hasNetworkImage
+                        ? 'Ganti gambar soal'
+                        : 'Tambah gambar soal',
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.add_photo_alternate_outlined,
+                  color: Colors.green,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _field(
+    TextEditingController controller,
+    String label,
+    String hint,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.grey,
+            fontSize: 13,
+          ),
+        ),
+
         const SizedBox(height: 8),
+
         TextField(
           controller: controller,
           maxLines: null,
@@ -1088,15 +1572,21 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
             fillColor: Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(
+                color: Colors.grey.shade200,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(
+                color: Colors.grey.shade200,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Colors.green),
+              borderSide: const BorderSide(
+                color: Colors.green,
+              ),
             ),
           ),
         ),
@@ -1104,7 +1594,10 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
     );
   }
 
-  Widget _optionField(String label, TextEditingController controller) {
+  Widget _optionField(
+    String label,
+    TextEditingController controller,
+  ) {
     return TextField(
       controller: controller,
       decoration: InputDecoration(
@@ -1117,7 +1610,12 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ),
         hintText: 'Jawaban $label',
@@ -1125,15 +1623,21 @@ class _QuizBuilderSheetState extends State<QuizBuilderSheet> {
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(
+            color: Colors.grey.shade200,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(
+            color: Colors.grey.shade200,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.green),
+          borderSide: const BorderSide(
+            color: Colors.green,
+          ),
         ),
       ),
     );
@@ -1146,7 +1650,10 @@ class QuestionFormData {
   final TextEditingController optionBController;
   final TextEditingController optionCController;
   final TextEditingController optionDController;
+
   String correctAnswer;
+  File? imageFile;
+  String imageUrl;
 
   QuestionFormData({
     String question = '',
@@ -1155,6 +1662,8 @@ class QuestionFormData {
     String optionC = '',
     String optionD = '',
     this.correctAnswer = 'A',
+    this.imageFile,
+    this.imageUrl = '',
   })  : questionController = TextEditingController(text: question),
         optionAController = TextEditingController(text: optionA),
         optionBController = TextEditingController(text: optionB),
@@ -1162,37 +1671,95 @@ class QuestionFormData {
         optionDController = TextEditingController(text: optionD);
 
   factory QuestionFormData.fromMap(Map<String, dynamic> map) {
-    final opsi = map['opsi'] ?? map['pilihan'] ?? {};
+    final dynamic opsiRaw = map['opsi'] ?? map['pilihan'];
+
+    String optionA = '';
+    String optionB = '';
+    String optionC = '';
+    String optionD = '';
+
+    if (opsiRaw is List) {
+      optionA = opsiRaw.isNotEmpty ? opsiRaw[0]?.toString() ?? '' : '';
+      optionB = opsiRaw.length > 1 ? opsiRaw[1]?.toString() ?? '' : '';
+      optionC = opsiRaw.length > 2 ? opsiRaw[2]?.toString() ?? '' : '';
+      optionD = opsiRaw.length > 3 ? opsiRaw[3]?.toString() ?? '' : '';
+    } else if (opsiRaw is Map) {
+      optionA = opsiRaw['A']?.toString() ?? '';
+      optionB = opsiRaw['B']?.toString() ?? '';
+      optionC = opsiRaw['C']?.toString() ?? '';
+      optionD = opsiRaw['D']?.toString() ?? '';
+    }
+
+    String correctAnswer = 'A';
+    final dynamic rawAnswer =
+        map['jawaban_benar'] ?? map['correct_answer'] ?? map['correctAnswer'];
+
+    if (rawAnswer is int) {
+      correctAnswer = _indexToAnswer(rawAnswer);
+    } else if (rawAnswer is num) {
+      correctAnswer = _indexToAnswer(rawAnswer.toInt());
+    } else {
+      final answerString = rawAnswer?.toString().toUpperCase().trim() ?? 'A';
+
+      if (['A', 'B', 'C', 'D'].contains(answerString)) {
+        correctAnswer = answerString;
+      } else {
+        correctAnswer = 'A';
+      }
+    }
 
     return QuestionFormData(
-      question: map['pertanyaan'] ?? map['question'] ?? '',
-      optionA: opsi['A'] ?? map['opsi_a'] ?? '',
-      optionB: opsi['B'] ?? map['opsi_b'] ?? '',
-      optionC: opsi['C'] ?? map['opsi_c'] ?? '',
-      optionD: opsi['D'] ?? map['opsi_d'] ?? '',
-      correctAnswer: map['jawaban_benar'] ?? map['correct_answer'] ?? 'A',
+      question: map['pertanyaan']?.toString() ?? map['question']?.toString() ?? '',
+      optionA: optionA,
+      optionB: optionB,
+      optionC: optionC,
+      optionD: optionD,
+      correctAnswer: correctAnswer,
+      imageUrl: map['gambar_url']?.toString() ??
+          map['image_url']?.toString() ??
+          '',
     );
+  }
+
+  static String _indexToAnswer(int index) {
+    switch (index) {
+      case 0:
+        return 'A';
+      case 1:
+        return 'B';
+      case 2:
+        return 'C';
+      case 3:
+        return 'D';
+      default:
+        return 'A';
+    }
   }
 
   String? validate(int number) {
     if (questionController.text.trim().isEmpty) {
       return 'Pertanyaan soal $number wajib diisi';
     }
+
     if (optionAController.text.trim().isEmpty ||
         optionBController.text.trim().isEmpty ||
         optionCController.text.trim().isEmpty ||
         optionDController.text.trim().isEmpty) {
       return 'Semua pilihan jawaban soal $number wajib diisi';
     }
+
     if (!['A', 'B', 'C', 'D'].contains(correctAnswer)) {
       return 'Jawaban benar soal $number wajib dipilih';
     }
+
     return null;
   }
 
   Map<String, dynamic> toMap() {
     return {
       'pertanyaan': questionController.text.trim(),
+      'gambar_url': imageUrl,
+      'image_file': imageFile,
       'opsi': {
         'A': optionAController.text.trim(),
         'B': optionBController.text.trim(),

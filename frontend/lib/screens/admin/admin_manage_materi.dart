@@ -1,13 +1,10 @@
-// ========================
-// ADMIN MANAGE MATERI UI
-// FULL FUNCTION + ICON CLOUDINARY FALLBACK + REAL TIME UPDATED AT
-// ========================
-
 import 'dart:async';
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../services/api_service.dart';
 
 class AdminManageMateri extends StatefulWidget {
@@ -73,45 +70,44 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
     try {
       final data = await ApiService.getModulesByLanguage(widget.languageId);
 
-      if (mounted) {
-        setState(() {
-          modules = data;
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => isLoading = false);
+      if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gagal mengambil data materi'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      setState(() {
+        modules = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() => isLoading = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal mengambil data materi'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
-
-  // ================= FETCH LANGUAGE DETAIL =================
-  // Ini sengaja dibuat supaya icon_url tetap muncul walaupun admin_main_screen.dart
-  // belum mengirim languageIconUrl ke halaman ini.
 
   Future<void> _fetchLanguageInfo() async {
     try {
       final languages = await ApiService.getLanguages();
 
-      final matched = languages.firstWhere(
-        (item) => item['_id'] == widget.languageId,
-        orElse: () => null,
-      );
+      dynamic matched;
+
+      try {
+        matched = languages.firstWhere(
+          (item) => item['_id'] == widget.languageId,
+        );
+      } catch (_) {
+        matched = null;
+      }
 
       if (matched != null && mounted) {
         setState(() {
-          currentLanguageName =
-              matched['nama_bahasa'] ?? currentLanguageName;
-          currentLanguageIconUrl =
-              matched['icon_url'] ?? currentLanguageIconUrl;
+          currentLanguageName = matched['nama_bahasa'] ?? currentLanguageName;
+          currentLanguageIconUrl = matched['icon_url'] ?? currentLanguageIconUrl;
           currentLanguageUpdatedAt =
               matched['updatedAt'] ?? currentLanguageUpdatedAt;
         });
@@ -156,7 +152,9 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
 
   void _showEditLanguageDialog() {
     final TextEditingController languageController = TextEditingController(
-      text: currentLanguageName.isEmpty ? widget.languageName : currentLanguageName,
+      text: currentLanguageName.isEmpty
+          ? widget.languageName
+          : currentLanguageName,
     );
 
     showDialog(
@@ -226,7 +224,9 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                   currentLanguageUpdatedAt = DateTime.now().toIso8601String();
                 });
 
-                _fetchLanguageInfo();
+                await _fetchLanguageInfo();
+
+                if (!mounted) return;
 
                 Navigator.pop(context);
 
@@ -258,9 +258,8 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
   // ================= DELETE LANGUAGE =================
 
   void _confirmDeleteLanguage() {
-    final languageName = currentLanguageName.isEmpty
-        ? widget.languageName
-        : currentLanguageName;
+    final languageName =
+        currentLanguageName.isEmpty ? widget.languageName : currentLanguageName;
 
     showDialog(
       context: context,
@@ -370,7 +369,9 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
               if (success) {
                 Navigator.pop(context);
 
-                _fetchModules();
+                await _fetchModules();
+
+                if (!mounted) return;
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -416,9 +417,8 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
 
   @override
   Widget build(BuildContext context) {
-    final displayLanguageName = currentLanguageName.isEmpty
-        ? widget.languageName
-        : currentLanguageName;
+    final displayLanguageName =
+        currentLanguageName.isEmpty ? widget.languageName : currentLanguageName;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
@@ -446,9 +446,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 4),
-
                     const Text(
                       'Kelola materi pembelajaran',
                       style: TextStyle(
@@ -456,13 +454,9 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                         fontSize: 14,
                       ),
                     ),
-
                     const SizedBox(height: 25),
-
                     _buildLanguageHeaderCard(displayLanguageName),
-
                     const SizedBox(height: 30),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -500,9 +494,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                         )
                       ],
                     ),
-
                     const SizedBox(height: 18),
-
                     if (modules.isEmpty)
                       Container(
                         width: double.infinity,
@@ -535,7 +527,6 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                           );
                         },
                       ),
-
                     const SizedBox(height: 100),
                   ],
                 ),
@@ -602,9 +593,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                         ),
                 ),
               ),
-
               const SizedBox(width: 15),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -622,9 +611,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                             ),
                           ),
                         ),
-
                         const SizedBox(width: 8),
-
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
@@ -645,9 +632,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                         )
                       ],
                     ),
-
                     const SizedBox(height: 6),
-
                     Text(
                       "${modules.length} Materi • Terakhir diupdate $updatedText",
                       maxLines: 1,
@@ -662,9 +647,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
               )
             ],
           ),
-
           const SizedBox(height: 18),
-
           Row(
             children: [
               Expanded(
@@ -677,9 +660,9 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                       color: Colors.green.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Icon(
                           Icons.edit,
                           color: Colors.green,
@@ -698,9 +681,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                   ),
                 ),
               ),
-
               const SizedBox(width: 12),
-
               Expanded(
                 child: InkWell(
                   onTap: _confirmDeleteLanguage,
@@ -711,9 +692,9 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                       color: Colors.red.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Icon(
                           Icons.delete,
                           color: Colors.red,
@@ -768,9 +749,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                     fontSize: 16,
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   mod['deskripsi'] ?? '',
                   maxLines: 1,
@@ -783,7 +762,6 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
               ],
             ),
           ),
-
           Container(
             width: 42,
             height: 42,
@@ -799,9 +777,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
               onPressed: () => _showForm(module: mod),
             ),
           ),
-
           const SizedBox(width: 8),
-
           Container(
             width: 42,
             height: 42,
@@ -868,13 +844,16 @@ class _MultiContentFormState extends State<MultiContentForm> {
 
       if (materiIsi != null && materiIsi is List) {
         for (var item in materiIsi) {
+          final tipe = item['tipe'] ?? 'text';
+          final content = item['content']?.toString() ?? '';
+
           contentItems.add({
-            'tipe': item['tipe'] ?? 'text',
-            'content': item['content'] ?? '',
+            'tipe': tipe,
+            'content': content,
             'isExisting': true,
-            'controller': item['tipe'] == 'text'
+            'controller': tipe == 'text'
                 ? TextEditingController(
-                    text: item['content']?.toString() ?? '',
+                    text: content,
                   )
                 : null,
           });
@@ -889,13 +868,17 @@ class _MultiContentFormState extends State<MultiContentForm> {
     _descController.dispose();
 
     for (var item in contentItems) {
-      if (item['controller'] != null &&
-          item['controller'] is TextEditingController) {
-        item['controller'].dispose();
-      }
+      _disposeItemController(item);
     }
 
     super.dispose();
+  }
+
+  void _disposeItemController(Map<String, dynamic> item) {
+    if (item['controller'] != null &&
+        item['controller'] is TextEditingController) {
+      item['controller'].dispose();
+    }
   }
 
   // ================= ADD TEXT =================
@@ -912,9 +895,10 @@ class _MultiContentFormState extends State<MultiContentForm> {
 
   // ================= ADD IMAGE =================
 
-  void _addImage() async {
+  Future<void> _addImage() async {
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
+      imageQuality: 80,
     );
 
     if (picked != null) {
@@ -928,17 +912,58 @@ class _MultiContentFormState extends State<MultiContentForm> {
     }
   }
 
-  // ================= SAVE =================
+  // ================= VALIDATION =================
+
+  String? _validateForm() {
+    if (_judulController.text.trim().isEmpty) {
+      return 'Judul bab wajib diisi';
+    }
+
+    if (contentItems.isEmpty) {
+      return 'Minimal isi 1 konten materi';
+    }
+
+    for (int i = 0; i < contentItems.length; i++) {
+      final item = contentItems[i];
+
+      if (item['tipe'] == 'text') {
+        final controller = item['controller'];
+
+        if (controller == null ||
+            controller is! TextEditingController ||
+            controller.text.trim().isEmpty) {
+          return 'Konten teks ${i + 1} masih kosong';
+        }
+      }
+
+      if (item['tipe'] == 'image') {
+        final bool hasExistingImage = item['isExisting'] == true &&
+            item['content'] != null &&
+            item['content'].toString().isNotEmpty;
+
+        final bool hasNewImage = item['file'] != null;
+
+        if (!hasExistingImage && !hasNewImage) {
+          return 'Gambar konten ${i + 1} belum dipilih';
+        }
+      }
+    }
+
+    return null;
+  }
+
+  // ================= SAVE / UPDATE =================
 
   Future<void> _submit() async {
-    if (_judulController.text.trim().isEmpty || contentItems.isEmpty) {
+    final validationMessage = _validateForm();
+
+    if (validationMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Judul dan konten wajib diisi'),
+        SnackBar(
+          content: Text(validationMessage),
           backgroundColor: Colors.red,
         ),
       );
-
       return;
     }
 
@@ -994,6 +1019,25 @@ class _MultiContentFormState extends State<MultiContentForm> {
     }
   }
 
+  // ================= REPLACE IMAGE =================
+
+  Future<void> _replaceImage(int index) async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (picked != null) {
+      setState(() {
+        contentItems[index]['file'] = File(picked.path);
+        contentItems[index]['isExisting'] = false;
+        contentItems[index].remove('content');
+      });
+    }
+  }
+
+  // ================= BUILD =================
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1020,9 +1064,7 @@ class _MultiContentFormState extends State<MultiContentForm> {
               borderRadius: BorderRadius.circular(20),
             ),
           ),
-
           const SizedBox(height: 20),
-
           Text(
             isEditMode ? "Edit Isi Materi" : "Tambah Isi Materi",
             style: const TextStyle(
@@ -1030,9 +1072,7 @@ class _MultiContentFormState extends State<MultiContentForm> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 25),
-
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -1041,16 +1081,12 @@ class _MultiContentFormState extends State<MultiContentForm> {
                     _judulController,
                     "Judul Bab",
                   ),
-
                   const SizedBox(height: 15),
-
                   _input(
                     _descController,
                     "Deskripsi",
                   ),
-
                   const SizedBox(height: 25),
-
                   Row(
                     children: [
                       Expanded(
@@ -1070,9 +1106,7 @@ class _MultiContentFormState extends State<MultiContentForm> {
                       )
                     ],
                   ),
-
                   const SizedBox(height: 25),
-
                   ...contentItems.asMap().entries.map((entry) {
                     int i = entry.key;
                     var itm = entry.value;
@@ -1082,13 +1116,11 @@ class _MultiContentFormState extends State<MultiContentForm> {
                       itm,
                     );
                   }).toList(),
-
                   const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
-
           SizedBox(
             width: double.infinity,
             height: 55,
@@ -1096,14 +1128,20 @@ class _MultiContentFormState extends State<MultiContentForm> {
               onPressed: isSaving ? null : _submit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
+                disabledBackgroundColor: Colors.grey.shade300,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
               child: isSaving
-                  ? const CircularProgressIndicator(
-                      color: Colors.white,
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : Text(
                       isEditMode ? "Update Materi" : "Simpan Materi",
@@ -1115,7 +1153,6 @@ class _MultiContentFormState extends State<MultiContentForm> {
                     ),
             ),
           ),
-
           const SizedBox(height: 20),
         ],
       ),
@@ -1216,15 +1253,14 @@ class _MultiContentFormState extends State<MultiContentForm> {
                 ),
                 onPressed: () {
                   setState(() {
+                    _disposeItemController(contentItems[i]);
                     contentItems.removeAt(i);
                   });
                 },
               )
             ],
           ),
-
           const SizedBox(height: 10),
-
           if (itm['tipe'] == 'text')
             TextField(
               controller: itm['controller'],
@@ -1235,39 +1271,74 @@ class _MultiContentFormState extends State<MultiContentForm> {
               ),
             )
           else
-            ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: itm['isExisting'] == true
-                  ? CachedNetworkImage(
-                      imageUrl: itm['content'],
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        height: 180,
-                        color: Colors.grey.shade100,
-                        child: const Center(
-                          child: CircularProgressIndicator(
+            Column(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: itm['isExisting'] == true
+                      ? CachedNetworkImage(
+                          imageUrl: itm['content'],
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            height: 180,
+                            color: Colors.grey.shade100,
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.green,
+                              ),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            height: 180,
+                            width: double.infinity,
+                            color: Colors.grey.shade100,
+                            child: const Icon(
+                              Icons.broken_image,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        )
+                      : Image.file(
+                          itm['file'],
+                          height: 180,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                ),
+                const SizedBox(height: 10),
+                InkWell(
+                  onTap: () => _replaceImage(i),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.image_outlined,
+                          color: Colors.green,
+                          size: 18,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Ganti Gambar',
+                          style: TextStyle(
                             color: Colors.green,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        height: 180,
-                        width: double.infinity,
-                        color: Colors.grey.shade100,
-                        child: const Icon(
-                          Icons.broken_image,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    )
-                  : Image.file(
-                      itm['file'],
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                      ],
                     ),
+                  ),
+                ),
+              ],
             )
         ],
       ),
