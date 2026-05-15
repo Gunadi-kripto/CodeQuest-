@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Language = require('../models/Language');
 const { upload } = require('../config/cloudinary'); // Menggunakan config yang sudah ada
+const Module = require('../models/Module');
+const Quiz = require('../models/Quiz');
 
 // 1. TAMBAH BAHASA BARU (Admin mengunggah logo + nama + warna)
 router.post('/', upload.single('icon_file'), async (req, res) => {
@@ -103,21 +105,40 @@ router.put('/:id', upload.single('icon_file'), async (req, res) => {
 // DELETE /api/language/:id
 router.delete('/:id', async (req, res) => {
   try {
-    const deletedLanguage = await Language.findByIdAndDelete(req.params.id);
+    const languageId = req.params.id;
 
-    if (!deletedLanguage) {
+    const language = await Language.findById(languageId);
+
+    if (!language) {
       return res.status(404).json({
         message: 'Bahasa tidak ditemukan',
       });
     }
 
+    // Ambil semua module/materi yang memakai bahasa ini
+    const modules = await Module.find({ id_bahasa: languageId });
+
+    const moduleIds = modules.map((module) => module._id);
+
+    // Hapus semua quiz yang terhubung dengan module/materi bahasa ini
+    await Quiz.deleteMany({
+      module_id: { $in: moduleIds },
+    });
+
+    // Hapus semua module/materi bahasa ini
+    await Module.deleteMany({
+      id_bahasa: languageId,
+    });
+
+    // Hapus bahasa
+    await Language.findByIdAndDelete(languageId);
+
     res.status(200).json({
-      message: 'Bahasa berhasil dihapus!',
-      data: deletedLanguage,
+      message: 'Bahasa, materi, dan kuis terkait berhasil dihapus',
     });
   } catch (error) {
     res.status(500).json({
-      message: 'Gagal menghapus bahasa.',
+      message: 'Gagal menghapus bahasa',
       error: error.message,
     });
   }

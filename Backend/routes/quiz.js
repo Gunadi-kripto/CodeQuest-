@@ -1,59 +1,120 @@
 const express = require('express');
 const router = express.Router();
 const Quiz = require('../models/Quiz');
+const Module = require('../models/Module');
+const { upload } = require('../config/cloudinary');
 
 // 1. AMBIL KUIS BERDASARKAN ID MATERI
 router.get('/:moduleId', async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ module_id: req.params.moduleId });
+    const moduleId = req.params.moduleId;
+
+    const module = await Module.findById(moduleId);
+
+    if (!module) {
+      return res.status(404).json({
+        message: 'Materi tidak ditemukan atau sudah dihapus',
+        data: [],
+      });
+    }
+
+    const quizzes = await Quiz.find({
+      module_id: moduleId,
+    });
+
     res.status(200).json(quizzes);
   } catch (error) {
-    res.status(500).json({ message: 'Gagal mengambil data kuis' });
+    res.status(500).json({
+      message: 'Gagal mengambil kuis',
+      error: error.message,
+    });
   }
 });
 
 // 2. TAMBAH KUIS PILIHAN GANDA (ADMIN)
-router.post('/', async (req, res) => {
+router.post('/', upload.any(), async (req, res) => {
   try {
-    const { module_id, pertanyaan, opsi, jawaban_benar, hint, xp_reward } = req.body;
-    
-    // Validasi sederhana: pastikan opsi ada 4
-    if (!opsi || opsi.length < 4) {
-      return res.status(400).json({ message: 'Harus ada 4 opsi jawaban!' });
-    }
+    const { module_id, daftar_soal, xp_reward } = req.body;
 
-    const newQuiz = new Quiz({ 
-      module_id, 
-      pertanyaan, 
-      opsi, 
-      jawaban_benar, 
-      hint, 
-      xp_reward 
+    let parsedSoal = JSON.parse(daftar_soal);
+
+    req.files.forEach((file) => {
+      const match = file.fieldname.match(/^gambar_soal_(\d+)$/);
+
+      if (match) {
+        const index = parseInt(match[1]);
+
+        if (parsedSoal[index]) {
+          parsedSoal[index].gambar_url = file.path;
+        }
+      }
+    });
+
+    const newQuiz = new Quiz({
+      module_id,
+      daftar_soal: parsedSoal,
+      xp_reward,
     });
 
     await newQuiz.save();
-    res.status(201).json({ message: 'Kuis pilihan ganda berhasil ditambahkan!', quiz: newQuiz });
+
+    res.status(201).json({
+      message: 'Quiz berhasil ditambahkan',
+      data: newQuiz,
+    });
   } catch (error) {
-    console.error("Gagal tambah kuis:", error);
-    res.status(500).json({ message: 'Gagal menambahkan kuis' });
+    res.status(500).json({
+      message: 'Gagal menambahkan quiz',
+      error: error.message,
+    });
   }
 });
 
 // 3. EDIT KUIS (ADMIN)
-router.put('/:id', async (req, res) => {
+router.put('/:id', upload.any(), async (req, res) => {
   try {
-    const { pertanyaan, opsi, jawaban_benar, hint, xp_reward } = req.body;
+    const { daftar_soal, xp_reward } = req.body;
+
+    let parsedSoal = JSON.parse(daftar_soal);
+
+    req.files.forEach((file) => {
+      const match = file.fieldname.match(/^gambar_soal_(\d+)$/);
+
+      if (match) {
+        const index = parseInt(match[1]);
+
+        if (parsedSoal[index]) {
+          parsedSoal[index].gambar_url = file.path;
+        }
+      }
+    });
+
     const updatedQuiz = await Quiz.findByIdAndUpdate(
       req.params.id,
-      { pertanyaan, opsi, jawaban_benar, hint, xp_reward },
-      { new: true } // Mengembalikan data setelah diupdate
+      {
+        daftar_soal: parsedSoal,
+        xp_reward,
+      },
+      { new: true }
     );
-    res.status(200).json({ message: 'Kuis diperbarui!', quiz: updatedQuiz });
+
+    if (!updatedQuiz) {
+      return res.status(404).json({
+        message: 'Quiz tidak ditemukan',
+      });
+    }
+
+    res.status(200).json({
+      message: 'Quiz berhasil diupdate',
+      data: updatedQuiz,
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Gagal memperbarui kuis' });
+    res.status(500).json({
+      message: 'Gagal update quiz',
+      error: error.message,
+    });
   }
 });
-
 // 4. HAPUS KUIS (ADMIN)
 router.delete('/:id', async (req, res) => {
   try {

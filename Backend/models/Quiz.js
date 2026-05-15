@@ -18,6 +18,10 @@ const quizSchema = new mongoose.Schema({
         required: true,
         validate: [arrayLimit, '{PATH} harus memiliki 4 pilihan jawaban']
       },
+      gambar_url: {
+        type: String,
+        default: '',
+      },
       jawaban_benar: { 
         type: Number, // Menyimpan index jawaban (0, 1, 2, atau 3)
         required: true 

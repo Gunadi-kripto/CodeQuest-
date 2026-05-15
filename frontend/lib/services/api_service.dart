@@ -611,7 +611,9 @@ class ApiService {
   ) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/users/search?query=$query&currentUserId=$currentUserId'),
+        Uri.parse(
+          '$baseUrl/users/search?query=$query&currentUserId=$currentUserId',
+        ),
       );
 
       if (response.statusCode == 200) return jsonDecode(response.body);
@@ -756,24 +758,85 @@ class ApiService {
     }
   }
 
+  static int _answerLetterToIndex(dynamic answer) {
+    final value = answer.toString().toUpperCase().trim();
+
+    switch (value) {
+      case 'A':
+        return 0;
+      case 'B':
+        return 1;
+      case 'C':
+        return 2;
+      case 'D':
+        return 3;
+      default:
+        return 0;
+    }
+  }
+
   static Future<bool> addQuiz(
     String moduleId,
     List<Map<String, dynamic>> daftarSoal,
     int xp,
   ) async {
     try {
-      final res = await http.post(
+      final request = http.MultipartRequest(
+        'POST',
         Uri.parse('$baseUrl/quizzes'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'module_id': moduleId,
-          'daftar_soal': daftarSoal,
-          'xp_reward': xp,
-        }),
       );
 
-      return res.statusCode == 201;
+      final List<Map<String, dynamic>> cleanSoal = [];
+
+      for (int i = 0; i < daftarSoal.length; i++) {
+        final soal = Map<String, dynamic>.from(daftarSoal[i]);
+        final imageFile = soal['image_file'];
+
+        if (imageFile != null && imageFile is File) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'gambar_soal_$i',
+              imageFile.path,
+            ),
+          );
+        }
+
+        final opsiRaw = soal['opsi'];
+
+        List<String> opsiList = [];
+
+        if (opsiRaw is Map) {
+          opsiList = [
+            opsiRaw['A']?.toString() ?? '',
+            opsiRaw['B']?.toString() ?? '',
+            opsiRaw['C']?.toString() ?? '',
+            opsiRaw['D']?.toString() ?? '',
+          ];
+        } else if (opsiRaw is List) {
+          opsiList = opsiRaw.map((e) => e.toString()).toList();
+        }
+
+        cleanSoal.add({
+          'pertanyaan': soal['pertanyaan']?.toString() ?? '',
+          'gambar_url': soal['gambar_url']?.toString() ?? '',
+          'opsi': opsiList,
+          'jawaban_benar': _answerLetterToIndex(soal['jawaban_benar']),
+        });
+      }
+
+      request.fields['module_id'] = moduleId;
+      request.fields['xp_reward'] = xp.toString();
+      request.fields['daftar_soal'] = jsonEncode(cleanSoal);
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('ADD QUIZ STATUS: ${response.statusCode}');
+      print('ADD QUIZ BODY: ${response.body}');
+
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
+      print('Error add quiz: $e');
       return false;
     }
   }
@@ -784,17 +847,61 @@ class ApiService {
     int xp,
   ) async {
     try {
-      final res = await http.put(
+      final request = http.MultipartRequest(
+        'PUT',
         Uri.parse('$baseUrl/quizzes/$quizId'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'daftar_soal': daftarSoal,
-          'xp_reward': xp,
-        }),
       );
 
-      return res.statusCode == 200;
+      final List<Map<String, dynamic>> cleanSoal = [];
+
+      for (int i = 0; i < daftarSoal.length; i++) {
+        final soal = Map<String, dynamic>.from(daftarSoal[i]);
+        final imageFile = soal['image_file'];
+
+        if (imageFile != null && imageFile is File) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'gambar_soal_$i',
+              imageFile.path,
+            ),
+          );
+        }
+
+        final opsiRaw = soal['opsi'];
+
+        List<String> opsiList = [];
+
+        if (opsiRaw is Map) {
+          opsiList = [
+            opsiRaw['A']?.toString() ?? '',
+            opsiRaw['B']?.toString() ?? '',
+            opsiRaw['C']?.toString() ?? '',
+            opsiRaw['D']?.toString() ?? '',
+          ];
+        } else if (opsiRaw is List) {
+          opsiList = opsiRaw.map((e) => e.toString()).toList();
+        }
+
+        cleanSoal.add({
+          'pertanyaan': soal['pertanyaan']?.toString() ?? '',
+          'gambar_url': soal['gambar_url']?.toString() ?? '',
+          'opsi': opsiList,
+          'jawaban_benar': _answerLetterToIndex(soal['jawaban_benar']),
+        });
+      }
+
+      request.fields['xp_reward'] = xp.toString();
+      request.fields['daftar_soal'] = jsonEncode(cleanSoal);
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('UPDATE QUIZ STATUS: ${response.statusCode}');
+      print('UPDATE QUIZ BODY: ${response.body}');
+
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
+      print('Error update quiz: $e');
       return false;
     }
   }
