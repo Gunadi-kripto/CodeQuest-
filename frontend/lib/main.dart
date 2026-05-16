@@ -38,9 +38,7 @@ class CodeQuestApp extends StatelessWidget {
   }
 }
 
-// =====================================================
 // SPLASH SCREEN / AUTO LOGIN CHECK
-// =====================================================
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -129,9 +127,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-// =====================================================
 // MAIN SCREEN USER
-// =====================================================
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
