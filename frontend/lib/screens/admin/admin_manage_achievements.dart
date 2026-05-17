@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../services/api_service.dart';
 
 class AdminManageAchievements extends StatefulWidget {
@@ -38,12 +40,28 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
       'value': 'xp_reward',
       'icon': Icons.stars_rounded,
     },
-    {
-      'label': 'Streak Login',
-      'value': 'streak_login',
-      'icon': Icons.local_fire_department_rounded,
-    },
   ];
+
+  bool get isLanguageBasedCategory => selectedCategory == 'progress_belajar';
+
+  List<dynamic> get uniqueLanguages {
+    final Map<String, dynamic> map = {};
+
+    for (final lang in languages) {
+      final id = lang['_id']?.toString() ?? '';
+
+      if (id.isNotEmpty) {
+        map[id] = lang;
+      }
+    }
+
+    return map.values.toList();
+  }
+
+  String? get selectedLanguageId {
+    if (selectedLanguage == null) return null;
+    return selectedLanguage['_id']?.toString();
+  }
 
   @override
   void initState() {
@@ -69,8 +87,8 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
       languages = data;
       isLoadingLanguages = false;
 
-      if (languages.isNotEmpty && selectedLanguage == null) {
-        selectedLanguage = languages.first;
+      if (uniqueLanguages.isNotEmpty && selectedLanguage == null) {
+        selectedLanguage = uniqueLanguages.first;
       }
     });
   }
@@ -97,17 +115,24 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
 
   List<dynamic> get filteredAchievements {
     return achievements.where((achievement) {
-      final languageId =
+      final dynamic rawLanguage =
           achievement['language_id']?['_id'] ?? achievement['language_id'];
 
-      final category = achievement['syarat_tipe'] ?? achievement['kategori'];
+      final String languageId = rawLanguage?.toString() ?? '';
+      final String category =
+          (achievement['syarat_tipe'] ?? achievement['kategori'] ?? '')
+              .toString();
 
-      final matchLanguage =
-          selectedLanguage == null || languageId == selectedLanguage['_id'];
+      final bool matchCategory = category == selectedCategory;
 
-      final matchCategory = category == selectedCategory;
+      if (!matchCategory) return false;
 
-      return matchLanguage && matchCategory;
+      if (selectedCategory == 'progress_belajar') {
+        if (selectedLanguage == null) return false;
+        return languageId == selectedLanguage['_id'].toString();
+      }
+
+      return languageId.isEmpty || rawLanguage == null;
     }).toList();
   }
 
@@ -116,13 +141,16 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
       final value = item['xp_reward'] ?? item['xp'] ?? 0;
 
       if (value is int) return sum + value;
+      if (value is num) return sum + value.toInt();
 
       return sum + (int.tryParse(value.toString()) ?? 0);
     });
   }
 
   void _showAchievementForm({Map<String, dynamic>? achievement}) {
-    if (selectedLanguage == null && achievement == null) {
+    if (isLanguageBasedCategory &&
+        selectedLanguage == null &&
+        achievement == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Pilih bahasa terlebih dahulu'),
@@ -137,8 +165,9 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AchievementFormSheet(
-        languages: languages,
+        languages: uniqueLanguages,
         selectedLanguage: selectedLanguage,
+        selectedCategory: selectedCategory,
         existingAchievement: achievement,
         onSaved: _loadAchievements,
       ),
@@ -216,6 +245,15 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
     );
   }
 
+  String _categoryLabel() {
+    final item = categories.firstWhere(
+      (cat) => cat['value'] == selectedCategory,
+      orElse: () => categories.first,
+    );
+
+    return item['label'];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -230,32 +268,23 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
-
               const SizedBox(height: 22),
-
               _buildFilterCard(),
-
               const SizedBox(height: 22),
-
               _buildSummaryCard(),
-
               const SizedBox(height: 22),
-
               _buildListHeader(),
-
               const SizedBox(height: 14),
-
               _buildAchievementContent(),
-
               const SizedBox(height: 18),
-
               SizedBox(
                 width: double.infinity,
                 height: 58,
                 child: ElevatedButton.icon(
-                  onPressed: selectedLanguage == null
-                      ? null
-                      : () => _showAchievementForm(),
+                  onPressed:
+                      isLanguageBasedCategory && selectedLanguage == null
+                          ? null
+                          : () => _showAchievementForm(),
                   icon: const Icon(
                     Icons.add,
                     color: Colors.white,
@@ -278,7 +307,6 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 110),
             ],
           ),
@@ -350,20 +378,51 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Bahasa Pemrograman',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 13,
+          if (isLanguageBasedCategory) ...[
+            const Text(
+              'Bahasa Pemrograman',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 13,
+              ),
             ),
-          ),
-
-          const SizedBox(height: 8),
-
-          _buildLanguageDropdown(),
-
-          const SizedBox(height: 16),
-
+            const SizedBox(height: 8),
+            _buildLanguageDropdown(),
+            const SizedBox(height: 16),
+          ],
+          if (!isLanguageBasedCategory) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.green.withOpacity(0.16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.public_rounded,
+                    color: Colors.green,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${_categoryLabel()} bersifat global, tidak tergantung bahasa pemrograman.',
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           const Text(
             'Kategori',
             style: TextStyle(
@@ -371,9 +430,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
               fontSize: 13,
             ),
           ),
-
           const SizedBox(height: 8),
-
           _buildCategoryDropdown(),
         ],
       ),
@@ -381,6 +438,12 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
   }
 
   Widget _buildLanguageDropdown() {
+    final languages = uniqueLanguages;
+    final String? currentValue = selectedLanguageId;
+
+    final bool valueExists = currentValue != null &&
+        languages.any((lang) => lang['_id']?.toString() == currentValue);
+
     if (isLoadingLanguages) {
       return _loadingBox('Memuat bahasa...');
     }
@@ -399,13 +462,16 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
         ),
       ),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<dynamic>(
-          value: selectedLanguage,
+        child: DropdownButton<String>(
+          value: valueExists ? currentValue : null,
           isExpanded: true,
+          hint: const Text('Pilih bahasa'),
           icon: const Icon(Icons.keyboard_arrow_down_rounded),
           items: languages.map((lang) {
-            return DropdownMenuItem<dynamic>(
-              value: lang,
+            final id = lang['_id']?.toString() ?? '';
+
+            return DropdownMenuItem<String>(
+              value: id,
               child: Row(
                 children: [
                   _smallLanguageIcon(lang['icon_url']),
@@ -425,9 +491,18 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
             );
           }).toList(),
           onChanged: (value) {
-            setState(() {
-              selectedLanguage = value;
-            });
+            if (value == null) return;
+
+            final pickedLanguage = languages.firstWhere(
+              (lang) => lang['_id']?.toString() == value,
+              orElse: () => null,
+            );
+
+            if (pickedLanguage != null) {
+              setState(() {
+                selectedLanguage = pickedLanguage;
+              });
+            }
           },
         ),
       ),
@@ -486,6 +561,12 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
             if (value != null) {
               setState(() {
                 selectedCategory = value;
+
+                if (selectedCategory == 'progress_belajar' &&
+                    selectedLanguage == null &&
+                    uniqueLanguages.isNotEmpty) {
+                  selectedLanguage = uniqueLanguages.first;
+                }
               });
             }
           },
@@ -577,7 +658,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
       );
     }
 
-    if (selectedLanguage == null) {
+    if (isLanguageBasedCategory && selectedLanguage == null) {
       return _emptyAchievementCard('Pilih bahasa terlebih dahulu');
     }
 
@@ -598,7 +679,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
   Widget _buildAchievementCard(dynamic achievement) {
     final String title = achievement['judul'] ?? 'Tanpa Judul';
     final String desc = achievement['deskripsi'] ?? '';
-    final int xp = achievement['xp_reward'] ?? achievement['xp'] ?? 0;
+    final int xp = _toInt(achievement['xp_reward'] ?? achievement['xp'] ?? 0);
     final String rarity = achievement['rarity'] ?? 'Common';
     final String icon = achievement['icon'] ?? achievement['icon_url'] ?? '';
 
@@ -619,9 +700,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
       child: Row(
         children: [
           _achievementIcon(icon),
-
           const SizedBox(width: 14),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -642,9 +721,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
                     _rarityBadge(rarity),
                   ],
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   desc,
                   maxLines: 2,
@@ -654,9 +731,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
                     fontSize: 13,
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
                 Text(
                   '$xp XP',
                   style: const TextStyle(
@@ -664,9 +739,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 14),
-
                 Row(
                   children: [
                     _smallActionButton(
@@ -694,6 +767,13 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
         ],
       ),
     );
+  }
+
+  int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+
+    return int.tryParse(value?.toString() ?? '0') ?? 0;
   }
 
   Widget _smallActionButton({
@@ -752,6 +832,13 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
           ? Image.network(
               iconUrl,
               fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(
+                  Icons.code_rounded,
+                  color: Colors.green,
+                  size: 19,
+                );
+              },
             )
           : const Icon(
               Icons.code_rounded,
@@ -921,6 +1008,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
 class AchievementFormSheet extends StatefulWidget {
   final List<dynamic> languages;
   final dynamic selectedLanguage;
+  final String selectedCategory;
   final Map<String, dynamic>? existingAchievement;
   final Future<void> Function() onSaved;
 
@@ -928,6 +1016,7 @@ class AchievementFormSheet extends StatefulWidget {
     super.key,
     required this.languages,
     required this.selectedLanguage,
+    required this.selectedCategory,
     this.existingAchievement,
     required this.onSaved,
   });
@@ -952,6 +1041,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
   bool isSaving = false;
 
   bool get isEditMode => widget.existingAchievement != null;
+  bool get isLanguageBasedCategory => selectedCategory == 'progress_belajar';
 
   final List<Map<String, dynamic>> categories = const [
     {
@@ -969,11 +1059,6 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
       'value': 'xp_reward',
       'icon': Icons.stars_rounded,
     },
-    {
-      'label': 'Streak Login',
-      'value': 'streak_login',
-      'icon': Icons.local_fire_department_rounded,
-    },
   ];
 
   final List<String> rarities = const [
@@ -983,11 +1068,31 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
     'Legendary',
   ];
 
+  List<dynamic> get uniqueLanguages {
+    final Map<String, dynamic> map = {};
+
+    for (final lang in widget.languages) {
+      final id = lang['_id']?.toString() ?? '';
+
+      if (id.isNotEmpty) {
+        map[id] = lang;
+      }
+    }
+
+    return map.values.toList();
+  }
+
+  String? get selectedLanguageId {
+    if (selectedLanguage == null) return null;
+    return selectedLanguage['_id']?.toString();
+  }
+
   @override
   void initState() {
     super.initState();
 
     selectedLanguage = widget.selectedLanguage;
+    selectedCategory = widget.selectedCategory;
 
     if (widget.existingAchievement != null) {
       final achievement = widget.existingAchievement!;
@@ -1000,8 +1105,9 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
       requirementController.text =
           (achievement['syarat_nilai'] ?? 5).toString();
 
-      selectedCategory =
-          achievement['syarat_tipe'] ?? achievement['kategori'] ?? 'progress_belajar';
+      selectedCategory = achievement['syarat_tipe'] ??
+          achievement['kategori'] ??
+          widget.selectedCategory;
 
       selectedRarity = achievement['rarity'] ?? 'Rare';
 
@@ -1010,13 +1116,31 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
       final achievementLanguageId =
           achievement['language_id']?['_id'] ?? achievement['language_id'];
 
-      if (achievementLanguageId != null) {
+      if (achievementLanguageId != null &&
+          achievementLanguageId.toString().isNotEmpty) {
         try {
-          selectedLanguage = widget.languages.firstWhere(
-            (lang) => lang['_id'] == achievementLanguageId,
+          selectedLanguage = uniqueLanguages.firstWhere(
+            (lang) =>
+                lang['_id']?.toString() == achievementLanguageId.toString(),
           );
-        } catch (_) {}
+        } catch (_) {
+          selectedLanguage = null;
+        }
+      } else {
+        if (selectedCategory != 'progress_belajar') {
+          selectedLanguage = null;
+        }
       }
+    }
+
+    if (selectedCategory == 'progress_belajar' &&
+        selectedLanguage == null &&
+        uniqueLanguages.isNotEmpty) {
+      selectedLanguage = uniqueLanguages.first;
+    }
+
+    if (selectedCategory != 'progress_belajar') {
+      selectedLanguage = null;
     }
   }
 
@@ -1044,8 +1168,8 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
   }
 
   Future<void> _saveAchievement() async {
-    if (selectedLanguage == null) {
-      _showError('Bahasa wajib dipilih');
+    if (isLanguageBasedCategory && selectedLanguage == null) {
+      _showError('Bahasa wajib dipilih untuk Progress Belajar');
       return;
     }
 
@@ -1082,10 +1206,13 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
 
     Map<String, dynamic> result;
 
+    final String languageId =
+        isLanguageBasedCategory ? selectedLanguage['_id'].toString() : '';
+
     if (isEditMode) {
       result = await ApiService.updateAchievementV2(
         id: widget.existingAchievement!['_id'],
-        languageId: selectedLanguage['_id'],
+        languageId: languageId,
         judul: titleController.text.trim(),
         deskripsi: descriptionController.text.trim(),
         syaratTipe: selectedCategory,
@@ -1097,7 +1224,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
       );
     } else {
       result = await ApiService.addAchievementV2(
-        languageId: selectedLanguage['_id'],
+        languageId: languageId,
         judul: titleController.text.trim(),
         deskripsi: descriptionController.text.trim(),
         syaratTipe: selectedCategory,
@@ -1143,6 +1270,15 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
     );
   }
 
+  String _categoryLabel() {
+    final item = categories.firstWhere(
+      (cat) => cat['value'] == selectedCategory,
+      orElse: () => categories.first,
+    );
+
+    return item['label'];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -1156,7 +1292,6 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
       child: Column(
         children: [
           const SizedBox(height: 12),
-
           Container(
             width: 48,
             height: 5,
@@ -1165,9 +1300,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
               borderRadius: BorderRadius.circular(20),
             ),
           ),
-
           const SizedBox(height: 16),
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Row(
@@ -1194,7 +1327,6 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
               ],
             ),
           ),
-
           Expanded(
             child: SingleChildScrollView(
               padding: EdgeInsets.only(
@@ -1207,51 +1339,72 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _previewCard(),
-
                   const SizedBox(height: 18),
-
-                  _languageDropdown(),
-
-                  const SizedBox(height: 14),
-
+                  if (isLanguageBasedCategory) ...[
+                    _languageDropdown(),
+                    const SizedBox(height: 14),
+                  ],
+                  if (!isLanguageBasedCategory) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.green.withOpacity(0.16),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.public_rounded,
+                            color: Colors.green,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${_categoryLabel()} ini global, jadi tidak perlu pilih bahasa.',
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   _input(
                     titleController,
                     'Nama Achievement',
                     'Contoh: Python Explorer',
                   ),
-
                   const SizedBox(height: 14),
-
                   _input(
                     descriptionController,
                     'Deskripsi',
                     'Contoh: Selesaikan 5 materi Python',
                   ),
-
                   const SizedBox(height: 14),
-
                   _input(
                     xpController,
                     'XP Reward',
                     'Contoh: 100',
                     keyboardType: TextInputType.number,
                   ),
-
                   const SizedBox(height: 14),
-
                   _input(
                     requirementController,
                     'Syarat Unlock',
                     'Contoh: 5',
                     keyboardType: TextInputType.number,
                   ),
-
                   const SizedBox(height: 14),
-
                   _categoryDropdown(),
-
                   const SizedBox(height: 18),
-
                   const Text(
                     'Rarity',
                     style: TextStyle(
@@ -1259,21 +1412,15 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
                       fontSize: 13,
                     ),
                   ),
-
                   const SizedBox(height: 10),
-
                   _raritySelector(),
-
                   const SizedBox(height: 18),
-
                   _uploadBadgeBox(),
-
                   const SizedBox(height: 90),
                 ],
               ),
             ),
           ),
-
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -1342,9 +1489,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
       child: Row(
         children: [
           _previewIcon(),
-
           const SizedBox(width: 16),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1357,9 +1502,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
                     fontSize: 13,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
                   titleController.text.trim().isEmpty
                       ? 'Nama Achievement'
@@ -1371,9 +1514,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 4),
-
                 Text(
                   descriptionController.text.trim().isEmpty
                       ? 'Deskripsi achievement'
@@ -1429,6 +1570,12 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
   }
 
   Widget _languageDropdown() {
+    final languages = uniqueLanguages;
+    final String? currentValue = selectedLanguageId;
+
+    final bool valueExists = currentValue != null &&
+        languages.any((lang) => lang['_id']?.toString() == currentValue);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1439,9 +1586,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
             fontSize: 13,
           ),
         ),
-
         const SizedBox(height: 8),
-
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
@@ -1452,22 +1597,36 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
             ),
           ),
           child: DropdownButtonHideUnderline(
-            child: DropdownButton<dynamic>(
-              value: selectedLanguage,
+            child: DropdownButton<String>(
+              value: valueExists ? currentValue : null,
               isExpanded: true,
+              hint: const Text('Pilih bahasa'),
               icon: const Icon(Icons.keyboard_arrow_down_rounded),
-              items: widget.languages.map((lang) {
-                return DropdownMenuItem<dynamic>(
-                  value: lang,
+              items: languages.map((lang) {
+                final id = lang['_id']?.toString() ?? '';
+
+                return DropdownMenuItem<String>(
+                  value: id,
                   child: Text(
                     lang['nama_bahasa'] ?? 'Tanpa Nama',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 );
               }).toList(),
               onChanged: (value) {
-                setState(() {
-                  selectedLanguage = value;
-                });
+                if (value == null) return;
+
+                final pickedLanguage = languages.firstWhere(
+                  (lang) => lang['_id']?.toString() == value,
+                  orElse: () => null,
+                );
+
+                if (pickedLanguage != null) {
+                  setState(() {
+                    selectedLanguage = pickedLanguage;
+                  });
+                }
               },
             ),
           ),
@@ -1487,9 +1646,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
             fontSize: 13,
           ),
         ),
-
         const SizedBox(height: 8),
-
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
@@ -1523,6 +1680,13 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
                 if (value != null) {
                   setState(() {
                     selectedCategory = value;
+
+                    if (selectedCategory != 'progress_belajar') {
+                      selectedLanguage = null;
+                    } else if (selectedLanguage == null &&
+                        uniqueLanguages.isNotEmpty) {
+                      selectedLanguage = uniqueLanguages.first;
+                    }
                   });
                 }
               },
@@ -1549,9 +1713,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
             fontSize: 13,
           ),
         ),
-
         const SizedBox(height: 8),
-
         TextField(
           controller: controller,
           keyboardType: keyboardType,
@@ -1656,9 +1818,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
                 size: 32,
               ),
             ),
-
             const SizedBox(width: 14),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1672,9 +1832,7 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
                       fontSize: 15,
                     ),
                   ),
-
                   const SizedBox(height: 3),
-
                   const Text(
                     'Pilih PNG/JPG dari galeri, file, atau Google Drive',
                     style: TextStyle(
@@ -1685,7 +1843,6 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
                 ],
               ),
             ),
-
             const Icon(
               Icons.chevron_right_rounded,
               color: Colors.grey,
