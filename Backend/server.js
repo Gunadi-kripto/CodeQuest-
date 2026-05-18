@@ -5,7 +5,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-
+const userProgressRoutes = require('./routes/userProgress');
 
 // Inisialisasi aplikasi Express
 const app = express();
@@ -17,7 +17,7 @@ app.use(express.json());
 // Menyambungkan rute API Authentication
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes); 
-
+app.use('/api/progress', userProgressRoutes);
 const moduleRoutes = require('./routes/module');
 const quizRoutes = require('./routes/quiz');
 const userRoutes = require('./routes/user');
