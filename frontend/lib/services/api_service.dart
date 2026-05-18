@@ -32,8 +32,6 @@ class ApiService {
     }
   }
 
-  // ================= UPDATE LANGUAGE =================
-  // Dipakai tombol Edit Bahasa di admin_manage_materi.dart
   static Future<bool> updateLanguage(String id, String namaBahasa) async {
     try {
       final response = await http.put(
@@ -69,6 +67,7 @@ class ApiService {
 
       request.fields['nama_bahasa'] = namaBahasa;
       request.fields['warna_tema'] = warnaTema;
+
       request.files.add(
         await http.MultipartFile.fromPath(
           'icon_file',
@@ -139,10 +138,20 @@ class ApiService {
           if (item['isExisting'] == true) {
             request.fields['content_$i'] = item['content'] ?? "";
           } else if (item['file'] != null) {
+            final File imageFile = item['file'];
+
+            if (!await imageFile.exists()) {
+              return {
+                'success': false,
+                'message':
+                    'Gambar konten ${i + 1} tidak ditemukan. Silakan pilih ulang gambar.',
+              };
+            }
+
             request.files.add(
               await http.MultipartFile.fromPath(
                 'file_$i',
-                item['file'].path,
+                imageFile.path,
               ),
             );
           }
@@ -179,8 +188,6 @@ class ApiService {
     }
   }
 
-  // ================= UPDATE MODULE V2 =================
-  // Dipakai saat edit materi/bab di admin_manage_materi.dart
   static Future<Map<String, dynamic>> updateModuleV2({
     required String idModule,
     required String idBahasa,
@@ -218,10 +225,20 @@ class ApiService {
           if (item['isExisting'] == true) {
             request.fields['content_$i'] = item['content'] ?? "";
           } else if (item['file'] != null) {
+            final File imageFile = item['file'];
+
+            if (!await imageFile.exists()) {
+              return {
+                'success': false,
+                'message':
+                    'Gambar konten ${i + 1} tidak ditemukan. Silakan pilih ulang gambar.',
+              };
+            }
+
             request.files.add(
               await http.MultipartFile.fromPath(
                 'file_$i',
-                item['file'].path,
+                imageFile.path,
               ),
             );
           }
@@ -542,6 +559,13 @@ class ApiService {
       request.fields['bio'] = bio;
 
       if (imageFile != null) {
+        if (!await imageFile.exists()) {
+          return {
+            'success': false,
+            'message': 'Foto profil tidak ditemukan. Silakan pilih ulang foto.',
+          };
+        }
+
         request.files.add(
           await http.MultipartFile.fromPath(
             'avatar',
@@ -793,6 +817,11 @@ class ApiService {
         final imageFile = soal['image_file'];
 
         if (imageFile != null && imageFile is File) {
+          if (!await imageFile.exists()) {
+            print('Gambar soal ${i + 1} tidak ditemukan.');
+            return false;
+          }
+
           request.files.add(
             await http.MultipartFile.fromPath(
               'gambar_soal_$i',
@@ -859,6 +888,11 @@ class ApiService {
         final imageFile = soal['image_file'];
 
         if (imageFile != null && imageFile is File) {
+          if (!await imageFile.exists()) {
+            print('Gambar soal ${i + 1} tidak ditemukan.');
+            return false;
+          }
+
           request.files.add(
             await http.MultipartFile.fromPath(
               'gambar_soal_$i',
@@ -944,18 +978,82 @@ class ApiService {
           userData['total_xp'] = data['total_xp'];
           userData['level'] = data['level'];
 
+          if (data['unlocked_achievements'] != null) {
+            userData['unlocked_achievements'] = data['unlocked_achievements'];
+          }
+
           await prefs.setString('user_data', jsonEncode(userData));
         }
 
         return {
           'success': true,
-          'new_achievements': data['new_achievements'],
+          'new_achievements': data['new_achievements'] ?? [],
+          'total_xp': data['total_xp'],
+          'level': data['level'],
         };
       }
 
-      return {'success': false};
+      return {
+        'success': false,
+        'new_achievements': [],
+      };
     } catch (e) {
-      return {'success': false};
+      return {
+        'success': false,
+        'new_achievements': [],
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> completeModule({
+    required String userId,
+    required String moduleId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/progress/complete-module'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': userId,
+          'module_id': moduleId,
+        }),
+      );
+
+      print('COMPLETE MODULE STATUS: ${response.statusCode}');
+      print('COMPLETE MODULE BODY: ${response.body}');
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        if (data['user'] != null) {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_data', jsonEncode(data['user']));
+        }
+
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Materi berhasil diselesaikan',
+          'progress': data['progress'],
+          'new_achievements': data['new_achievements'] ?? [],
+          'user': data['user'],
+        };
+      }
+
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Gagal menyelesaikan materi',
+        'new_achievements': [],
+      };
+    } catch (e) {
+      print('COMPLETE MODULE ERROR: $e');
+
+      return {
+        'success': false,
+        'message': 'Koneksi error: $e',
+        'new_achievements': [],
+      };
     }
   }
 
@@ -1035,9 +1133,6 @@ class ApiService {
     }
   }
 
-  // ================= ACHIEVEMENT V2 - UPLOAD BADGE =================
-  // Dipakai admin_manage_achievements.dart untuk upload badge dari File Manager / Google Drive
-
   static Future<Map<String, dynamic>> addAchievementV2({
     required String languageId,
     required String judul,
@@ -1061,6 +1156,13 @@ class ApiService {
       request.fields['syarat_nilai'] = syaratNilai.toString();
       request.fields['xp_reward'] = xpReward.toString();
       request.fields['rarity'] = rarity;
+
+      if (!await iconFile.exists()) {
+        return {
+          'success': false,
+          'message': 'File badge tidak ditemukan. Silakan pilih ulang badge.',
+        };
+      }
 
       request.files.add(
         await http.MultipartFile.fromPath(
@@ -1134,6 +1236,13 @@ class ApiService {
       }
 
       if (iconFile != null) {
+        if (!await iconFile.exists()) {
+          return {
+            'success': false,
+            'message': 'File badge tidak ditemukan. Silakan pilih ulang badge.',
+          };
+        }
+
         request.files.add(
           await http.MultipartFile.fromPath(
             'icon_file',

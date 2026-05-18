@@ -77,6 +77,11 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
   }],
+  unlocked_achievements: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Achievement',
+  }],
   friend_requests: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
