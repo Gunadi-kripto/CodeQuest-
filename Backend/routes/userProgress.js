@@ -3,6 +3,7 @@ const router = express.Router();
 
 const UserProgress = require('../models/UserProgress');
 const Module = require('../models/Module');
+const User = require('../models/User');
 const checkAndUnlockAchievements = require('../utils/checkAchievements');
 
 // ==========================================
@@ -40,8 +41,10 @@ router.post('/complete-module', async (req, res) => {
     if (progress) {
       alreadyCompleted = progress.is_completed === true;
 
-      progress.is_completed = true;
-      await progress.save();
+      if (!progress.is_completed) {
+        progress.is_completed = true;
+        await progress.save();
+      }
     } else {
       progress = await UserProgress.create({
         user_id,
@@ -53,17 +56,24 @@ router.post('/complete-module', async (req, res) => {
       });
     }
 
-    const newAchievements = alreadyCompleted
-      ? []
-      : await checkAndUnlockAchievements(user_id);
+    // PENTING:
+    // Tetap cek achievement walaupun materi sudah pernah selesai.
+    // Ini supaya kalau admin update syarat achievement,
+    // user tetap bisa dapat achievement saat endpoint ini terpanggil lagi.
+    const newAchievements = await checkAndUnlockAchievements(user_id);
+
+    const updatedUser = await User.findById(user_id)
+      .select('-password')
+      .populate('unlocked_achievements');
 
     return res.status(200).json({
       success: true,
       message: alreadyCompleted
-        ? 'Materi sudah pernah diselesaikan'
+        ? 'Materi sudah pernah diselesaikan, achievement dicek ulang'
         : 'Materi berhasil diselesaikan',
       progress,
       new_achievements: newAchievements,
+      user: updatedUser,
     });
   } catch (error) {
     console.error('COMPLETE MODULE ERROR:', error);
@@ -77,14 +87,17 @@ router.post('/complete-module', async (req, res) => {
 });
 
 // ==========================================
-// AMBIL PROGRESS MATERI USER
+// AMBIL PROGRESS USER
 // GET /api/progress/user/:userId
 // ==========================================
 router.get('/user/:userId', async (req, res) => {
   try {
     const progress = await UserProgress.find({
       user_id: req.params.userId,
-    });
+    })
+      .populate('module_id')
+      .populate('quiz_id')
+      .sort({ tanggal_selesai: -1 });
 
     return res.status(200).json({
       success: true,
