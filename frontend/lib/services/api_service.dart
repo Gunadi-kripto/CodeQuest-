@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -5,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
+  static const String baseUrl = 'https://code-quest-eta-wine.vercel.app/api';
 
   // ==========================================
   // 1. FUNGSI BAHASA (LANGUAGE)
@@ -319,24 +320,31 @@ class ApiService {
     String password,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'nama_lengkap': nama,
-          'email': email,
-          'password': password,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/register'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'nama_lengkap': nama,
+              'email': email,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       return {
         'statusCode': response.statusCode,
         ...jsonDecode(response.body),
       };
+    } on TimeoutException {
+      return {
+        'statusCode': 408,
+        'message': 'Server timeout, coba lagi',
+      };
     } catch (e) {
       return {
         'statusCode': 500,
-        'message': 'Gagal server',
+        'message': 'Gagal server: $e',
       };
     }
   }
@@ -346,14 +354,16 @@ class ApiService {
     String password,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': email,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
 
@@ -366,9 +376,14 @@ class ApiService {
 
       data['statusCode'] = response.statusCode;
       return data;
+    } on TimeoutException {
+      return {
+        'message': 'Server timeout, coba lagi',
+        'statusCode': 408,
+      };
     } catch (e) {
       return {
-        'message': 'Gagal server',
+        'message': 'Gagal server: $e',
         'statusCode': 500,
       };
     }
@@ -424,23 +439,22 @@ class ApiService {
 
   static Future<Map<String, dynamic>> resendOTP(String email) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/resend-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/resend-otp'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(const Duration(seconds: 15));
 
       return {
         'statusCode': response.statusCode,
         ...jsonDecode(response.body),
       };
+    } on TimeoutException {
+      return {'statusCode': 408, 'message': 'Server timeout, coba lagi'};
     } catch (e) {
-      return {
-        'statusCode': 500,
-        'message': 'Gagal server',
-      };
+      return {'statusCode': 500, 'message': 'Gagal server: $e'};
     }
   }
 
@@ -448,23 +462,22 @@ class ApiService {
     String email,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/forgot-password'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/forgot-password'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(const Duration(seconds: 15));
 
       return {
         'statusCode': response.statusCode,
         ...jsonDecode(response.body),
       };
+    } on TimeoutException {
+      return {'statusCode': 408, 'message': 'Server timeout, coba lagi'};
     } catch (e) {
-      return {
-        'statusCode': 500,
-        'message': 'Gagal server',
-      };
+      return {'statusCode': 500, 'message': 'Gagal server: $e'};
     }
   }
 
@@ -474,55 +487,54 @@ class ApiService {
     String newPassword,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/reset-password'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'otp': otp,
-          'newPassword': newPassword,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/reset-password'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': email,
+              'otp': otp,
+              'newPassword': newPassword,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       return {
         'statusCode': response.statusCode,
         ...jsonDecode(response.body),
       };
+    } on TimeoutException {
+      return {'statusCode': 408, 'message': 'Server timeout, coba lagi'};
     } catch (e) {
-      return {
-        'statusCode': 500,
-        'message': 'Gagal server',
-      };
+      return {'statusCode': 500, 'message': 'Gagal server: $e'};
     }
   }
 
   static Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/auth/google'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'idToken': idToken,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/auth/google'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'idToken': idToken}),
+          )
+          .timeout(const Duration(seconds: 15));
 
       final data = jsonDecode(response.body);
 
       if ((response.statusCode == 200 || response.statusCode == 201) &&
           data['token'] != null) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
-
         await prefs.setString('jwt_token', data['token']);
         await prefs.setString('user_data', jsonEncode(data['user']));
       }
 
       data['statusCode'] = response.statusCode;
       return data;
+    } on TimeoutException {
+      return {'message': 'Server timeout, coba lagi', 'statusCode': 408};
     } catch (e) {
-      return {
-        'message': 'Kesalahan koneksi',
-        'statusCode': 500,
-      };
+      return {'message': 'Kesalahan koneksi: $e', 'statusCode': 500};
     }
   }
 
