@@ -46,14 +46,11 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
     _fetchModules();
     _fetchLanguageInfo();
 
-    _timeAgoTimer = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) {
-        if (mounted) {
-          setState(() {});
-        }
-      },
-    );
+    _timeAgoTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -107,7 +104,8 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
       if (matched != null && mounted) {
         setState(() {
           currentLanguageName = matched['nama_bahasa'] ?? currentLanguageName;
-          currentLanguageIconUrl = matched['icon_url'] ?? currentLanguageIconUrl;
+          currentLanguageIconUrl =
+              matched['icon_url'] ?? currentLanguageIconUrl;
           currentLanguageUpdatedAt =
               matched['updatedAt'] ?? currentLanguageUpdatedAt;
         });
@@ -148,8 +146,6 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
     }
   }
 
-  // ================= EDIT LANGUAGE =================
-
   void _showEditLanguageDialog() {
     final TextEditingController languageController = TextEditingController(
       text: currentLanguageName.isEmpty
@@ -161,14 +157,10 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFF5F6F8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           "Edit Bahasa",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         content: TextField(
           controller: languageController,
@@ -185,10 +177,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "Batal",
-              style: TextStyle(color: Colors.grey),
-            ),
+            child: const Text("Batal", style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -245,35 +234,26 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                 );
               }
             },
-            child: const Text(
-              "Simpan",
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text("Simpan", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  // ================= DELETE LANGUAGE =================
-
   void _confirmDeleteLanguage() {
-    final languageName =
-        currentLanguageName.isEmpty ? widget.languageName : currentLanguageName;
+    final languageName = currentLanguageName.isEmpty
+        ? widget.languageName
+        : currentLanguageName;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFF5F6F8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           "Hapus Bahasa?",
-          style: TextStyle(
-            color: Colors.red,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
         content: Text(
           "Yakin ingin menghapus bahasa '$languageName'? Semua materi di dalam bahasa ini juga bisa ikut terhapus.",
@@ -281,10 +261,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "Batal",
-              style: TextStyle(color: Colors.grey),
-            ),
+            child: const Text("Batal", style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -295,7 +272,9 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
               ),
             ),
             onPressed: () async {
-              final success = await ApiService.deleteLanguage(widget.languageId);
+              final success = await ApiService.deleteLanguage(
+                widget.languageId,
+              );
 
               if (!mounted) return;
 
@@ -318,39 +297,24 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                 );
               }
             },
-            child: const Text(
-              "Hapus",
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text("Hapus", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  // ================= DELETE MODULE =================
-
-  void _confirmDeleteModule(
-    String id,
-    String judul,
-  ) {
+  void _confirmDeleteModule(String id, String judul) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFFF5F6F8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           "Hapus Materi?",
-          style: TextStyle(
-            color: Colors.red,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
-        content: Text(
-          "Yakin ingin menghapus '$judul'?",
-        ),
+        content: Text("Yakin ingin menghapus '$judul'?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -388,20 +352,16 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                 );
               }
             },
-            child: const Text(
-              "Hapus",
-              style: TextStyle(color: Colors.white),
-            ),
-          )
+            child: const Text("Hapus", style: TextStyle(color: Colors.white)),
+          ),
         ],
       ),
     );
   }
 
-  // ================= SHOW FORM =================
-
   void _showForm({
     Map<String, dynamic>? module,
+    bool openDraft = false,
   }) {
     showModalBottomSheet(
       context: context,
@@ -410,24 +370,28 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
       builder: (_) => MultiContentForm(
         languageId: widget.languageId,
         existingModule: module,
+        openDraft: openDraft,
         onSave: _fetchModules,
       ),
-    );
+    ).whenComplete(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final displayLanguageName =
-        currentLanguageName.isEmpty ? widget.languageName : currentLanguageName;
+    final displayLanguageName = currentLanguageName.isEmpty
+        ? widget.languageName
+        : currentLanguageName;
+
+    final bool hasDraft = ModuleDraftStore.hasDraft(widget.languageId);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Colors.green,
-              ),
-            )
+          ? const Center(child: CircularProgressIndicator(color: Colors.green))
           : RefreshIndicator(
               onRefresh: () async {
                 await _fetchModules();
@@ -449,10 +413,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                     const SizedBox(height: 4),
                     const Text(
                       'Kelola materi pembelajaran',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                     const SizedBox(height: 25),
                     _buildLanguageHeaderCard(displayLanguageName),
@@ -476,9 +437,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                           ),
                           label: const Text(
                             "Tambah Bab",
-                            style: TextStyle(
-                              color: Colors.white,
-                            ),
+                            style: TextStyle(color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
@@ -491,11 +450,14 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                               borderRadius: BorderRadius.circular(14),
                             ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                     const SizedBox(height: 18),
-                    if (modules.isEmpty)
+
+                    if (hasDraft) _buildDraftCard(),
+
+                    if (modules.isEmpty && !hasDraft)
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(25),
@@ -521,10 +483,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                         itemBuilder: (context, index) {
                           final mod = modules[index];
 
-                          return _buildChapterCard(
-                            index + 1,
-                            mod,
-                          );
+                          return _buildChapterCard(index + 1, mod);
                         },
                       ),
                     const SizedBox(height: 100),
@@ -534,8 +493,6 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
             ),
     );
   }
-
-  // ================= HEADER CARD =================
 
   Widget _buildLanguageHeaderCard(String displayLanguageName) {
     final updatedText = _timeAgo(currentLanguageUpdatedAt);
@@ -553,7 +510,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
             color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -586,11 +543,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                             size: 35,
                           ),
                         )
-                      : const Icon(
-                          Icons.code,
-                          color: Colors.blue,
-                          size: 35,
-                        ),
+                      : const Icon(Icons.code, color: Colors.blue, size: 35),
                 ),
               ),
               const SizedBox(width: 15),
@@ -629,7 +582,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                               fontSize: 11,
                             ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -637,14 +590,11 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                       "${modules.length} Materi • Terakhir diupdate $updatedText",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                      ),
-                    )
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
           const SizedBox(height: 18),
@@ -663,11 +613,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.edit,
-                          color: Colors.green,
-                          size: 18,
-                        ),
+                        Icon(Icons.edit, color: Colors.green, size: 18),
                         SizedBox(width: 8),
                         Text(
                           "Edit Bahasa",
@@ -675,7 +621,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                             color: Colors.green,
                             fontWeight: FontWeight.bold,
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -695,11 +641,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.delete,
-                          color: Colors.red,
-                          size: 18,
-                        ),
+                        Icon(Icons.delete, color: Colors.red, size: 18),
                         SizedBox(width: 8),
                         Text(
                           "Hapus Bahasa",
@@ -707,34 +649,123 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                             color: Colors.red,
                             fontWeight: FontWeight.bold,
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
             ],
-          )
+          ),
         ],
       ),
     );
   }
 
-  // ================= CHAPTER CARD =================
+  Widget _buildDraftCard() {
+    final draft = ModuleDraftStore.get(widget.languageId);
 
-  Widget _buildChapterCard(
-    int number,
-    dynamic mod,
-  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.orange.withOpacity(0.35),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.edit_note_rounded,
+              color: Colors.orange,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Draft - Belum Disimpan',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  draft?.judul.trim().isNotEmpty == true
+                      ? draft!.judul
+                      : 'Lanjutkan materi yang belum disimpan',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.edit,
+                size: 18,
+                color: Colors.green,
+              ),
+              onPressed: () => _showForm(openDraft: true),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.08),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.delete_outline,
+                size: 18,
+                color: Colors.red,
+              ),
+              onPressed: () {
+                setState(() {
+                  ModuleDraftStore.remove(widget.languageId);
+                });
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChapterCard(int number, dynamic mod) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.grey.shade200,
-        ),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
         children: [
@@ -754,11 +785,8 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                   mod['deskripsi'] ?? '',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 13,
-                  ),
-                )
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                ),
               ],
             ),
           ),
@@ -770,10 +798,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: const Icon(
-                Icons.edit,
-                size: 18,
-              ),
+              icon: const Icon(Icons.edit, size: 18),
               onPressed: () => _showForm(module: mod),
             ),
           ),
@@ -804,18 +829,58 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
 }
 
 // =====================================================
-// ================= FORM INPUT ========================
+// DRAFT STORE MATERI
+// =====================================================
+
+class ModuleDraftData {
+  final String judul;
+  final String deskripsi;
+  final List<Map<String, dynamic>> contents;
+
+  ModuleDraftData({
+    required this.judul,
+    required this.deskripsi,
+    required this.contents,
+  });
+}
+
+class ModuleDraftStore {
+  static final Map<String, ModuleDraftData> _drafts = {};
+
+  static String key(String languageId) => 'module_draft_$languageId';
+
+  static ModuleDraftData? get(String languageId) {
+    return _drafts[key(languageId)];
+  }
+
+  static void save(String languageId, ModuleDraftData draft) {
+    _drafts[key(languageId)] = draft;
+  }
+
+  static void remove(String languageId) {
+    _drafts.remove(key(languageId));
+  }
+
+  static bool hasDraft(String languageId) {
+    return _drafts.containsKey(key(languageId));
+  }
+}
+
+// =====================================================
+// FORM INPUT MATERI
 // =====================================================
 
 class MultiContentForm extends StatefulWidget {
   final String languageId;
   final Map<String, dynamic>? existingModule;
+  final bool openDraft;
   final VoidCallback onSave;
 
   const MultiContentForm({
     super.key,
     required this.languageId,
     this.existingModule,
+    this.openDraft = false,
     required this.onSave,
   });
 
@@ -836,7 +901,40 @@ class _MultiContentFormState extends State<MultiContentForm> {
   void initState() {
     super.initState();
 
-    if (widget.existingModule != null) {
+    if (widget.openDraft && !isEditMode) {
+      final draft = ModuleDraftStore.get(widget.languageId);
+
+      if (draft != null) {
+        _judulController.text = draft.judul;
+        _descController.text = draft.deskripsi;
+
+        for (final item in draft.contents) {
+          if (item['tipe'] == 'text') {
+            final controller = TextEditingController(
+              text: item['content']?.toString() ?? '',
+            );
+
+            controller.addListener(_saveDraft);
+
+            contentItems.add({
+              'tipe': 'text',
+              'controller': controller,
+              'isExisting': false,
+            });
+          } else if (item['tipe'] == 'image') {
+            final path = item['path']?.toString() ?? '';
+
+            if (path.isNotEmpty && File(path).existsSync()) {
+              contentItems.add({
+                'tipe': 'image',
+                'file': File(path),
+                'isExisting': false,
+              });
+            }
+          }
+        }
+      }
+    } else if (widget.existingModule != null) {
       _judulController.text = widget.existingModule!['judul_modul'] ?? '';
       _descController.text = widget.existingModule!['deskripsi'] ?? '';
 
@@ -852,18 +950,24 @@ class _MultiContentFormState extends State<MultiContentForm> {
             'content': content,
             'isExisting': true,
             'controller': tipe == 'text'
-                ? TextEditingController(
-                    text: content,
-                  )
+                ? TextEditingController(text: content)
                 : null,
           });
         }
       }
     }
+
+    _judulController.addListener(_saveDraft);
+    _descController.addListener(_saveDraft);
   }
 
   @override
   void dispose() {
+    _saveDraft();
+
+    _judulController.removeListener(_saveDraft);
+    _descController.removeListener(_saveDraft);
+
     _judulController.dispose();
     _descController.dispose();
 
@@ -881,19 +985,129 @@ class _MultiContentFormState extends State<MultiContentForm> {
     }
   }
 
-  // ================= ADD TEXT =================
+  void _saveDraft() {
+    if (isEditMode) return;
+
+    final List<Map<String, dynamic>> draftContents = [];
+
+    for (final item in contentItems) {
+      if (item['tipe'] == 'text') {
+        final controller = item['controller'];
+
+        draftContents.add({
+          'tipe': 'text',
+          'content': controller is TextEditingController ? controller.text : '',
+        });
+      } else if (item['tipe'] == 'image') {
+        final file = item['file'];
+
+        if (file is File) {
+          draftContents.add({
+            'tipe': 'image',
+            'path': file.path,
+          });
+        }
+      }
+    }
+
+    final bool hasDraft =
+        _judulController.text.trim().isNotEmpty ||
+        _descController.text.trim().isNotEmpty ||
+        draftContents.isNotEmpty;
+
+    if (!hasDraft) return;
+
+    ModuleDraftStore.save(
+      widget.languageId,
+      ModuleDraftData(
+        judul: _judulController.text,
+        deskripsi: _descController.text,
+        contents: draftContents,
+      ),
+    );
+  }
+
+  void _clearDraft() {
+    if (!isEditMode) {
+      ModuleDraftStore.remove(widget.languageId);
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+
+    FocusScope.of(context).unfocus();
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
+          contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.red,
+                size: 28,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Peringatan',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 19,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.4,
+              color: Colors.black87,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text(
+                'Oke',
+                style: TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   void _addText() {
+    final controller = TextEditingController();
+    controller.addListener(_saveDraft);
+
     setState(() {
       contentItems.add({
         'tipe': 'text',
-        'controller': TextEditingController(),
+        'controller': controller,
         'isExisting': false,
       });
     });
-  }
 
-  // ================= ADD IMAGE =================
+    _saveDraft();
+  }
 
   Future<void> _addImage() async {
     final picked = await ImagePicker().pickImage(
@@ -909,14 +1123,18 @@ class _MultiContentFormState extends State<MultiContentForm> {
           'isExisting': false,
         });
       });
+
+      _saveDraft();
     }
   }
-
-  // ================= VALIDATION =================
 
   String? _validateForm() {
     if (_judulController.text.trim().isEmpty) {
       return 'Judul bab wajib diisi';
+    }
+
+    if (_descController.text.trim().isEmpty) {
+      return 'Deskripsi wajib diisi';
     }
 
     if (contentItems.isEmpty) {
@@ -937,7 +1155,8 @@ class _MultiContentFormState extends State<MultiContentForm> {
       }
 
       if (item['tipe'] == 'image') {
-        final bool hasExistingImage = item['isExisting'] == true &&
+        final bool hasExistingImage =
+            item['isExisting'] == true &&
             item['content'] != null &&
             item['content'].toString().isNotEmpty;
 
@@ -952,18 +1171,11 @@ class _MultiContentFormState extends State<MultiContentForm> {
     return null;
   }
 
-  // ================= SAVE / UPDATE =================
-
   Future<void> _submit() async {
     final validationMessage = _validateForm();
 
     if (validationMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(validationMessage),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showError(validationMessage);
       return;
     }
 
@@ -993,6 +1205,8 @@ class _MultiContentFormState extends State<MultiContentForm> {
     setState(() => isSaving = false);
 
     if (res['success'] == true) {
+      _clearDraft();
+
       widget.onSave();
 
       Navigator.pop(context);
@@ -1008,18 +1222,9 @@ class _MultiContentFormState extends State<MultiContentForm> {
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            res['message'] ?? 'Gagal menyimpan materi',
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showError(res['message'] ?? 'Gagal menyimpan materi');
     }
   }
-
-  // ================= REPLACE IMAGE =================
 
   Future<void> _replaceImage(int index) async {
     final picked = await ImagePicker().pickImage(
@@ -1033,140 +1238,130 @@ class _MultiContentFormState extends State<MultiContentForm> {
         contentItems[index]['isExisting'] = false;
         contentItems[index].remove('content');
       });
+
+      _saveDraft();
     }
   }
 
-  // ================= BUILD =================
+  Future<bool> _onWillPopForm() async {
+    _saveDraft();
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.92,
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(30),
+    return WillPopScope(
+      onWillPop: _onWillPopForm,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.92,
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 50,
-            height: 5,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            isEditMode ? "Edit Isi Materi" : "Tambah Isi Materi",
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 25),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _input(
-                    _judulController,
-                    "Judul Bab",
-                  ),
-                  const SizedBox(height: 15),
-                  _input(
-                    _descController,
-                    "Deskripsi",
-                  ),
-                  const SizedBox(height: 25),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _addButton(
-                          Icons.text_fields,
-                          "Tambah Teks",
-                          _addText,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _addButton(
-                          Icons.image,
-                          "Tambah Gambar",
-                          _addImage,
-                        ),
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 25),
-                  ...contentItems.asMap().entries.map((entry) {
-                    int i = entry.key;
-                    var itm = entry.value;
-
-                    return _contentCard(
-                      i,
-                      itm,
-                    );
-                  }).toList(),
-                  const SizedBox(height: 100),
-                ],
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 50,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
-          ),
-          SizedBox(
-            width: double.infinity,
-            height: 55,
-            child: ElevatedButton(
-              onPressed: isSaving ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                disabledBackgroundColor: Colors.grey.shade300,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+            const SizedBox(height: 20),
+            Text(
+              isEditMode ? "Edit Isi Materi" : "Tambah Isi Materi",
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 25),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _input(_judulController, "Judul Bab"),
+                    const SizedBox(height: 15),
+                    _input(_descController, "Deskripsi"),
+                    const SizedBox(height: 25),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _addButton(
+                            Icons.text_fields,
+                            "Tambah Teks",
+                            _addText,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _addButton(
+                            Icons.image,
+                            "Tambah Gambar",
+                            _addImage,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 25),
+                    ...contentItems.asMap().entries.map((entry) {
+                      int i = entry.key;
+                      var itm = entry.value;
+
+                      return _contentCard(i, itm);
+                    }).toList(),
+                    const SizedBox(height: 100),
+                  ],
                 ),
               ),
-              child: isSaving
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : Text(
-                      isEditMode ? "Update Materi" : "Simpan Materi",
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
             ),
-          ),
-          const SizedBox(height: 20),
-        ],
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton(
+                onPressed: isSaving ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  disabledBackgroundColor: Colors.grey.shade300,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: isSaving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        isEditMode ? "Update Materi" : "Simpan Materi",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
 
-  // ================= INPUT =================
-
-  Widget _input(
-    TextEditingController controller,
-    String hint,
-  ) {
+  Widget _input(TextEditingController controller, String hint) {
     return TextField(
       controller: controller,
+      onChanged: (_) => _saveDraft(),
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
@@ -1179,30 +1374,19 @@ class _MultiContentFormState extends State<MultiContentForm> {
     );
   }
 
-  // ================= ADD BUTTON =================
-
-  Widget _addButton(
-    IconData icon,
-    String title,
-    VoidCallback onTap,
-  ) {
+  Widget _addButton(IconData icon, String title, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: 18,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
           color: Colors.green.withOpacity(0.08),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              color: Colors.green,
-            ),
+            Icon(icon, color: Colors.green),
             const SizedBox(height: 8),
             Text(
               title,
@@ -1210,28 +1394,21 @@ class _MultiContentFormState extends State<MultiContentForm> {
                 color: Colors.green,
                 fontWeight: FontWeight.bold,
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
-  // ================= CONTENT CARD =================
-
-  Widget _contentCard(
-    int i,
-    Map<String, dynamic> itm,
-  ) {
+  Widget _contentCard(int i, Map<String, dynamic> itm) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Colors.grey.shade200,
-        ),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         children: [
@@ -1241,23 +1418,20 @@ class _MultiContentFormState extends State<MultiContentForm> {
               Flexible(
                 child: Text(
                   "Konten ${i + 1} (${itm['tipe'].toString().toUpperCase()})",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
               IconButton(
-                icon: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.red,
-                ),
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
                 onPressed: () {
                   setState(() {
                     _disposeItemController(contentItems[i]);
                     contentItems.removeAt(i);
                   });
+
+                  _saveDraft();
                 },
-              )
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -1265,6 +1439,7 @@ class _MultiContentFormState extends State<MultiContentForm> {
             TextField(
               controller: itm['controller'],
               maxLines: 5,
+              onChanged: (_) => _saveDraft(),
               decoration: const InputDecoration(
                 hintText: 'Tulis isi materi...',
                 border: InputBorder.none,
@@ -1339,7 +1514,7 @@ class _MultiContentFormState extends State<MultiContentForm> {
                   ),
                 ),
               ],
-            )
+            ),
         ],
       ),
     );
