@@ -281,10 +281,9 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
                 width: double.infinity,
                 height: 58,
                 child: ElevatedButton.icon(
-                  onPressed:
-                      isLanguageBasedCategory && selectedLanguage == null
-                          ? null
-                          : () => _showAchievementForm(),
+                  onPressed: isLanguageBasedCategory && selectedLanguage == null
+                      ? null
+                      : () => _showAchievementForm(),
                   icon: const Icon(
                     Icons.add,
                     color: Colors.white,
@@ -1262,11 +1261,63 @@ class _AchievementFormSheetState extends State<AchievementFormSheet> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+    if (!mounted) return;
+
+    FocusScope.of(context).unfocus();
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
+          contentPadding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.red,
+                size: 28,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Peringatan',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 19,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.4,
+              color: Colors.black87,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text(
+                'Oke',
+                style: TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

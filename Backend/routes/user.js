@@ -4,39 +4,66 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const Achievement = require('../models/Achievement'); 
 const { upload } = require('../config/cloudinary');
+const checkAndUnlockAchievements = require('../utils/checkAchievements');
 
-// API untuk Menambah XP & TRIGGER ACHIEVEMENT
+// API untuk Menambah XP & Trigger Achievement XP Reward
 router.post('/add-xp', async (req, res) => {
   try {
     const { userId, xpToAdd } = req.body;
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
-    user.total_xp += xpToAdd;
-    user.total_kuis_selesai = (user.total_kuis_selesai || 0) + 1; 
-    user.level = Math.floor(user.total_xp / 100) + 1;
-
-    const allAchievements = await Achievement.find();
-    let newlyUnlocked = [];
-
-    if (!user.unlocked_achievements) user.unlocked_achievements = [];
-
-    for (let ach of allAchievements) {
-      if (user.unlocked_achievements.includes(ach._id)) continue;
-
-      let isUnlocked = false;
-      if (ach.syarat_tipe === 'capai_xp' && user.total_xp >= ach.syarat_nilai) isUnlocked = true;
-      if (ach.syarat_tipe === 'selesai_kuis' && user.total_kuis_selesai >= ach.syarat_nilai) isUnlocked = true;
-
-      if (isUnlocked) {
-        user.unlocked_achievements.push(ach._id);
-        newlyUnlocked.push(ach); 
-      }
+    if (!userId || xpToAdd === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId dan xpToAdd wajib dikirim',
+      });
     }
 
+    const xpNumber = Number(xpToAdd);
+
+    if (Number.isNaN(xpNumber) || xpNumber <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'XP harus berupa angka lebih dari 0',
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User tidak ditemukan',
+      });
+    }
+
+    user.total_xp = (user.total_xp || 0) + xpNumber;
+    user.level = Math.floor((user.total_xp || 0) / 100) + 1;
+
     await user.save();
-    res.status(200).json({ message: 'XP berhasil ditambahkan!', total_xp: user.total_xp, level: user.level, new_achievements: newlyUnlocked });
-  } catch (error) { res.status(500).json({ message: 'Gagal menambahkan XP.' }); }
+
+    const newAchievements = await checkAndUnlockAchievements(userId);
+
+    const updatedUser = await User.findById(userId)
+      .select('-password_hash')
+      .populate('unlocked_achievements');
+
+    return res.status(200).json({
+      success: true,
+      message: 'XP berhasil ditambahkan',
+      total_xp: updatedUser.total_xp,
+      level: updatedUser.level,
+      new_achievements: newAchievements,
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error('ADD XP ERROR:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal menambahkan XP',
+      error: error.message,
+    });
+  }
 });
 
 // API Get Profil Spesifik

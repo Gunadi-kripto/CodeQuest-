@@ -41,29 +41,50 @@ router.post('/complete-module', async (req, res) => {
     if (progress) {
       alreadyCompleted = progress.is_completed === true;
 
-      if (!progress.is_completed) {
-        progress.is_completed = true;
-        await progress.save();
-      }
+      progress.is_completed = true;
+      progress.status_benar = false;
+      progress.tipe_progress = 'materi';
+      progress.module_id = module_id;
+      progress.quiz_id = null;
+
+      // kalau model UserProgress kamu sudah punya language_id
+      progress.language_id = module.id_bahasa || null;
+
+      await progress.save();
     } else {
       progress = await UserProgress.create({
         user_id,
+        language_id: module.id_bahasa || null,
         module_id,
         quiz_id: null,
         tipe_progress: 'materi',
         is_completed: true,
         status_benar: false,
+        skor: 0,
       });
     }
 
-    // PENTING:
-    // Tetap cek achievement walaupun materi sudah pernah selesai.
-    // Ini supaya kalau admin update syarat achievement,
-    // user tetap bisa dapat achievement saat endpoint ini terpanggil lagi.
+    // ==========================================
+    // HITUNG ULANG TOTAL MATERI SELESAI
+    // ==========================================
+    const completedMateriCount = await UserProgress.countDocuments({
+      user_id,
+      tipe_progress: 'materi',
+      is_completed: true,
+    });
+
+    await User.findByIdAndUpdate(user_id, {
+      total_materi_dibaca: completedMateriCount,
+    });
+
+    // ==========================================
+    // CEK ACHIEVEMENT
+    // ==========================================
     const newAchievements = await checkAndUnlockAchievements(user_id);
 
+    // Ambil user terbaru setelah total_materi_dibaca dan achievement diupdate
     const updatedUser = await User.findById(user_id)
-      .select('-password')
+      .select('-password -password_hash')
       .populate('unlocked_achievements');
 
     return res.status(200).json({
@@ -72,6 +93,7 @@ router.post('/complete-module', async (req, res) => {
         ? 'Materi sudah pernah diselesaikan, achievement dicek ulang'
         : 'Materi berhasil diselesaikan',
       progress,
+      total_materi_dibaca: completedMateriCount,
       new_achievements: newAchievements,
       user: updatedUser,
     });
@@ -104,9 +126,70 @@ router.get('/user/:userId', async (req, res) => {
       data: progress,
     });
   } catch (error) {
+    console.error('GET USER PROGRESS ERROR:', error);
+
     return res.status(500).json({
       success: false,
       message: 'Gagal mengambil progress user',
+      error: error.message,
+    });
+  }
+});
+
+// ==========================================
+// AMBIL PROGRESS MATERI USER SAJA
+// GET /api/progress/user/:userId/modules
+// ==========================================
+router.get('/user/:userId/modules', async (req, res) => {
+  try {
+    const progress = await UserProgress.find({
+      user_id: req.params.userId,
+      tipe_progress: 'materi',
+      is_completed: true,
+    })
+      .populate('module_id')
+      .sort({ tanggal_selesai: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: progress,
+    });
+  } catch (error) {
+    console.error('GET USER MODULE PROGRESS ERROR:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil progress materi user',
+      error: error.message,
+    });
+  }
+});
+
+// ==========================================
+// AMBIL PROGRESS QUIZ USER SAJA
+// GET /api/progress/user/:userId/quizzes
+// ==========================================
+router.get('/user/:userId/quizzes', async (req, res) => {
+  try {
+    const progress = await UserProgress.find({
+      user_id: req.params.userId,
+      tipe_progress: 'quiz',
+      is_completed: true,
+    })
+      .populate('quiz_id')
+      .populate('module_id')
+      .sort({ tanggal_selesai: -1 });
+
+    return res.status(200).json({
+      success: true,
+      data: progress,
+    });
+  } catch (error) {
+    console.error('GET USER QUIZ PROGRESS ERROR:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil progress quiz user',
       error: error.message,
     });
   }

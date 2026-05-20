@@ -8,6 +8,13 @@ const userProgressSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Bahasa pemrograman, penting untuk achievement per bahasa
+    language_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Language',
+      default: null,
+    },
+
     // Untuk progress materi
     module_id: {
       type: mongoose.Schema.Types.ObjectId,
@@ -29,7 +36,7 @@ const userProgressSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Untuk materi: true kalau user sudah selesai baca materi
+    // true kalau user sudah menyelesaikan materi / quiz
     is_completed: {
       type: Boolean,
       default: false,
@@ -41,7 +48,7 @@ const userProgressSchema = new mongoose.Schema(
       default: false,
     },
 
-    // Optional, kalau nanti kamu mau simpan nilai quiz
+    // Optional, untuk simpan nilai quiz
     skor: {
       type: Number,
       default: 0,

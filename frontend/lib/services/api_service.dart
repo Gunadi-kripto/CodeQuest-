@@ -961,6 +961,74 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> submitQuiz({
+    required String userId,
+    required String quizId,
+    required int skor,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/quizzes/submit'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': userId,
+          'quiz_id': quizId,
+          'skor': skor,
+        }),
+      );
+
+      print('SUBMIT QUIZ STATUS: ${response.statusCode}');
+      print('SUBMIT QUIZ BODY: ${response.body}');
+
+      dynamic data;
+
+      try {
+        data = jsonDecode(response.body);
+      } catch (_) {
+        return {
+          'success': false,
+          'message':
+              'Server tidak mengirim JSON. Status: ${response.statusCode}. Body: ${response.body}',
+          'new_achievements': [],
+        };
+      }
+
+      if (response.statusCode == 200) {
+        if (data['user'] != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_data', jsonEncode(data['user']));
+        }
+
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Quiz berhasil disubmit',
+          'already_completed': data['already_completed'] ?? false,
+          'xp_added': data['xp_added'] ?? 0,
+          'total_kuis_selesai': data['total_kuis_selesai'] ?? 0,
+          'progress': data['progress'],
+          'new_achievements': data['new_achievements'] ?? [],
+          'user': data['user'],
+        };
+      }
+
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Gagal submit quiz',
+        'new_achievements': [],
+      };
+    } catch (e) {
+      print('SUBMIT QUIZ ERROR: $e');
+
+      return {
+        'success': false,
+        'message': 'Koneksi error: $e',
+        'new_achievements': [],
+      };
+    }
+  }
+
   // ==========================================
   // 6. FUNGSI XP & PROGRESS
   // ==========================================
@@ -1343,6 +1411,24 @@ class ApiService {
       return res.statusCode == 200;
     } catch (e) {
       return false;
+    }
+  }
+
+  static Future<List<dynamic>> getUserProgress(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/progress/user/$userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] ?? [];
+      }
+
+      return [];
+    } catch (e) {
+      print('GET USER PROGRESS ERROR: $e');
+      return [];
     }
   }
 }

@@ -17,7 +17,6 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   List<Map<String, dynamic>> questions = [];
-
   Map<int, int> userAnswers = {};
 
   bool isLoading = true;
@@ -26,6 +25,7 @@ class _QuizScreenState extends State<QuizScreen> {
   bool moduleDeleted = false;
 
   int quizXpReward = 0;
+  String currentQuizId = '';
   String errorMessage = '';
 
   @override
@@ -35,7 +35,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   // =====================================================
-  // LOAD DATA FRESH DARI BACKEND
+  // LOAD DATA
   // =====================================================
 
   Future<void> _loadData() async {
@@ -47,6 +47,8 @@ class _QuizScreenState extends State<QuizScreen> {
       moduleDeleted = false;
       questions = [];
       userAnswers.clear();
+      currentQuizId = '';
+      quizXpReward = 0;
     });
 
     if (widget.moduleId == null || widget.moduleId!.isEmpty) {
@@ -105,7 +107,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
       if (userStr != null && widget.moduleId != null) {
         final Map<String, dynamic> userData = jsonDecode(userStr);
-        final String userId = userData['id'] ?? userData['_id'];
+        final String userId =
+            (userData['id'] ?? userData['_id'] ?? '').toString();
 
         hasFinished =
             prefs.getBool('quiz_done_${userId}_${widget.moduleId}') ?? false;
@@ -124,6 +127,7 @@ class _QuizScreenState extends State<QuizScreen> {
       if (data.isEmpty) {
         questions = [];
         quizXpReward = 0;
+        currentQuizId = '';
         return;
       }
 
@@ -139,38 +143,16 @@ class _QuizScreenState extends State<QuizScreen> {
 
   // =====================================================
   // PARSE QUIZ
-  // Support:
-  // 1. Struktur baru admin:
-  //    [
-  //      {
-  //        "_id": "...",
-  //        "module_id": "...",
-  //        "xp_reward": 50,
-  //        "daftar_soal": [
-  //          {
-  //            "pertanyaan": "...",
-  //            "opsi": {"A": "...", "B": "...", "C": "...", "D": "..."},
-  //            "jawaban_benar": "A"
-  //          }
-  //        ]
-  //      }
-  //    ]
-  //
-  // 2. Struktur lama:
-  //    [
-  //      {
-  //        "pertanyaan": "...",
-  //        "opsi": ["...", "...", "...", "..."],
-  //        "jawaban_benar": 0,
-  //        "xp_reward": 10
-  //      }
-  //    ]
   // =====================================================
 
   void _parseQuizData(List<dynamic> data) {
     final List<Map<String, dynamic>> parsedQuestions = [];
 
     final firstQuiz = data.first;
+
+    if (firstQuiz is Map && firstQuiz['_id'] != null) {
+      currentQuizId = firstQuiz['_id'].toString();
+    }
 
     if (firstQuiz is Map && firstQuiz['xp_reward'] != null) {
       quizXpReward = _toInt(firstQuiz['xp_reward']);
@@ -181,12 +163,18 @@ class _QuizScreenState extends State<QuizScreen> {
 
       for (final item in soalList) {
         if (item is Map) {
-          parsedQuestions.add(_normalizeQuestion(Map<String, dynamic>.from(item)));
+          parsedQuestions.add(
+            _normalizeQuestion(Map<String, dynamic>.from(item)),
+          );
         }
       }
     } else {
       for (final item in data) {
         if (item is Map) {
+          if (currentQuizId.isEmpty && item['_id'] != null) {
+            currentQuizId = item['_id'].toString();
+          }
+
           final normalized = _normalizeQuestion(Map<String, dynamic>.from(item));
           parsedQuestions.add(normalized);
 
@@ -202,6 +190,10 @@ class _QuizScreenState extends State<QuizScreen> {
     }
 
     questions = parsedQuestions;
+
+    print('CURRENT QUIZ ID: $currentQuizId');
+    print('QUIZ XP REWARD: $quizXpReward');
+    print('TOTAL QUESTIONS: ${questions.length}');
   }
 
   Map<String, dynamic> _normalizeQuestion(Map<String, dynamic> raw) {
@@ -212,9 +204,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
     final List<String> opsiList = _normalizeOptions(opsiRaw);
 
-    final int correctIndex = _normalizeCorrectAnswer(raw['jawaban_benar'] ??
-        raw['correct_answer'] ??
-        raw['correctAnswer']);
+    final int correctIndex = _normalizeCorrectAnswer(
+      raw['jawaban_benar'] ?? raw['correct_answer'] ?? raw['correctAnswer'],
+    );
 
     return {
       'pertanyaan': pertanyaan,
@@ -275,7 +267,7 @@ class _QuizScreenState extends State<QuizScreen> {
   int _toInt(dynamic value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
-    return int.tryParse(value.toString()) ?? 0;
+    return int.tryParse(value?.toString() ?? '0') ?? 0;
   }
 
   // =====================================================
@@ -284,36 +276,25 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Future<void> _submitQuiz() async {
     if (questions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kuis belum tersedia.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar('Kuis belum tersedia.', Colors.red);
       return;
     }
 
     if (userAnswers.length < questions.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Jawab semua soal dulu.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar('Jawab semua soal dulu.', Colors.red);
       return;
     }
 
-    if (hasFinished) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kuis ini sudah pernah kamu selesaikan.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+    if (currentQuizId.isEmpty) {
+      _showSnackBar('ID quiz tidak ditemukan.', Colors.red);
       return;
     }
 
-    setState(() => isSubmitting = true);
+    if (!mounted) return;
+
+    setState(() {
+      isSubmitting = true;
+    });
 
     int correctCount = 0;
 
@@ -328,10 +309,8 @@ class _QuizScreenState extends State<QuizScreen> {
     final double score =
         questions.isEmpty ? 0 : (correctCount / questions.length) * 100;
 
-    final int totalXpEarned = score >= 80 ? quizXpReward : 0;
-
     if (score >= 80) {
-      await _handleQuizSuccess(score, totalXpEarned);
+      await _handleQuizSuccess(score);
     } else {
       await _showResultDialog(
         title: 'Coba Lagi! 💪',
@@ -342,46 +321,189 @@ class _QuizScreenState extends State<QuizScreen> {
 
     if (!mounted) return;
 
-    setState(() => isSubmitting = false);
+    setState(() {
+      isSubmitting = false;
+    });
   }
 
-  Future<void> _handleQuizSuccess(double score, int totalXpEarned) async {
+  Future<void> _handleQuizSuccess(double score) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final userStr = prefs.getString('user_data');
 
-      if (userStr != null && widget.moduleId != null) {
-        final Map<String, dynamic> userData = jsonDecode(userStr);
-        final String userId = userData['id'] ?? userData['_id'];
-
-        await ApiService.addXp(userId, totalXpEarned);
-
-        await prefs.setBool(
-          'quiz_done_${userId}_${widget.moduleId}',
-          true,
-        );
-
-        if (!mounted) return;
-
-        setState(() {
-          hasFinished = true;
-        });
-
-        await _showResultDialog(
-          title: 'Luar Biasa! 🎉',
-          message:
-              'Nilai: ${score.toInt()} / 100\nXP: +$totalXpEarned\nStatus: SELESAI',
-          isSuccess: true,
-        );
+      if (userStr == null || widget.moduleId == null) {
+        _showSnackBar('Data user tidak ditemukan.', Colors.red);
+        return;
       }
+
+      final Map<String, dynamic> userData = jsonDecode(userStr);
+      final String userId =
+          (userData['id'] ?? userData['_id'] ?? '').toString();
+
+      if (userId.isEmpty) {
+        _showSnackBar('ID user tidak valid.', Colors.red);
+        return;
+      }
+
+      final result = await ApiService.submitQuiz(
+        userId: userId,
+        quizId: currentQuizId,
+        skor: score.toInt(),
+      );
+
+      if (!mounted) return;
+
+      if (result['success'] != true) {
+        _showSnackBar(
+          result['message']?.toString() ?? 'Gagal submit quiz.',
+          Colors.red,
+        );
+        return;
+      }
+
+      await prefs.setBool(
+        'quiz_done_${userId}_${widget.moduleId}',
+        true,
+      );
+
+      final List<dynamic> newAchievements =
+          result['new_achievements'] is List
+              ? result['new_achievements']
+              : [];
+
+      final int xpAdded = _toInt(result['xp_added'] ?? 0);
+      final bool alreadyCompleted = result['already_completed'] == true;
+
+      if (!mounted) return;
+
+      setState(() {
+        hasFinished = true;
+      });
+
+      await _showResultDialog(
+        title: alreadyCompleted ? 'Quiz Sudah Selesai' : 'Luar Biasa! 🎉',
+        message: alreadyCompleted
+            ? 'Nilai: ${score.toInt()} / 100\nQuiz ini sudah pernah diselesaikan.\nXP tidak bertambah.'
+            : 'Nilai: ${score.toInt()} / 100\nXP: +$xpAdded\nStatus: SELESAI',
+        isSuccess: true,
+      );
+
+      if (!mounted) return;
+
+      if (newAchievements.isNotEmpty) {
+        await _showAchievementUnlockedDialog(newAchievements);
+      }
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gagal menyimpan hasil kuis.'),
-          backgroundColor: Colors.red,
-        ),
+      _showSnackBar('Gagal menyimpan hasil kuis: $e', Colors.red);
+    }
+  }
+
+  // =====================================================
+  // ACHIEVEMENT DIALOG
+  // =====================================================
+
+  Future<void> _showAchievementUnlockedDialog(
+    List<dynamic> achievements,
+  ) async {
+    for (final achievement in achievements) {
+      if (!mounted) return;
+
+      final String title =
+          (achievement['judul'] ?? 'Achievement Baru').toString();
+
+      final String description =
+          (achievement['deskripsi'] ?? '').toString();
+
+      final int xpReward = _toInt(achievement['xp_reward'] ?? 0);
+
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Achievement Unlocked!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events_rounded,
+                    color: Colors.orange,
+                    size: 58,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Text(
+                  '+$xpReward XP',
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            actionsAlignment: MainAxisAlignment.center,
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                },
+                child: const Text(
+                  'Mantap!',
+                  style: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       );
     }
   }
@@ -614,7 +736,7 @@ class _QuizScreenState extends State<QuizScreen> {
       color: Colors.amber[100],
       padding: const EdgeInsets.all(12),
       child: const Text(
-        '⚠️ Kamu sudah mengerjakan kuis ini. XP tidak akan bertambah lagi.',
+        '⚠️ Kamu sudah mengerjakan kuis ini. Backend akan tetap mengecek progress dan achievement.',
         textAlign: TextAlign.center,
         style: TextStyle(
           fontWeight: FontWeight.bold,
@@ -709,13 +831,11 @@ class _QuizScreenState extends State<QuizScreen> {
     final bool isSelected = userAnswers[qIdx] == oIdx;
 
     return GestureDetector(
-      onTap: hasFinished
-          ? null
-          : () {
-              setState(() {
-                userAnswers[qIdx] = oIdx;
-              });
-            },
+      onTap: () {
+        setState(() {
+          userAnswers[qIdx] = oIdx;
+        });
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(15),
@@ -774,20 +894,20 @@ class _QuizScreenState extends State<QuizScreen> {
         height: 54,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: hasFinished ? Colors.grey : Colors.green,
+            backgroundColor: Colors.green,
             disabledBackgroundColor: Colors.grey.shade300,
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
           ),
-          onPressed: (isSubmitting || hasFinished) ? null : _submitQuiz,
+          onPressed: isSubmitting ? null : _submitQuiz,
           child: isSubmitting
               ? const CircularProgressIndicator(
                   color: Colors.white,
                 )
               : Text(
-                  hasFinished ? 'Kuis Sudah Selesai' : 'Kumpulkan Jawaban',
+                  hasFinished ? 'Cek Ulang Progress Quiz' : 'Kumpulkan Jawaban',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -806,37 +926,46 @@ class _QuizScreenState extends State<QuizScreen> {
     return showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFF5F6F8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: isSuccess ? Colors.green : Colors.orange,
-            fontWeight: FontWeight.bold,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFF5F6F8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-        ),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-
-              if (isSuccess) {
-                Navigator.pop(context, true);
-              }
-            },
-            child: Text(
-              isSuccess ? 'Selesai' : 'Coba Lagi',
-              style: const TextStyle(
-                color: Colors.green,
-                fontWeight: FontWeight.bold,
-              ),
+          title: Text(
+            title,
+            style: TextStyle(
+              color: isSuccess ? Colors.green : Colors.orange,
+              fontWeight: FontWeight.bold,
             ),
-          )
-        ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text(
+                isSuccess ? 'Lanjut' : 'Coba Lagi',
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSnackBar(String message, Color color) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
       ),
     );
   }
