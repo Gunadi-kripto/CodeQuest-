@@ -9,12 +9,13 @@ import 'social_screen.dart';
 import '../shared/achievement_screen.dart';
 import '../auth/login_screen.dart';
 import '../../services/api_service.dart';
+import '../../utils/xp_level_helper.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  _ProfileScreenState createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
@@ -30,8 +31,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? userStr = prefs.getString('user_data');
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? userStr = prefs.getString('user_data');
 
     if (userStr == null) {
       if (mounted) {
@@ -70,7 +71,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           final freshProfile = results[0] as Map<String, dynamic>;
 
           userData!['total_xp'] = freshProfile['total_xp'] ?? 0;
-          userData!['level'] = freshProfile['level'] ?? 1;
           userData!['avatar_url'] = freshProfile['avatar_url'];
           userData!['nama_lengkap'] =
               freshProfile['nama_lengkap'] ?? userData!['nama_lengkap'];
@@ -98,7 +98,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   List<dynamic> _normalizeUnlockedAchievements(dynamic raw) {
     if (raw == null) return [];
-
     if (raw is! List) return [];
 
     return raw.map((item) {
@@ -123,6 +122,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
         (achievement['_id'] ?? achievement['id'] ?? '').toString();
 
     return unlockedIds.any((id) => id.toString() == achievementId);
+  }
+
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
+  String _formatXp(int xp) {
+    if (xp >= 1000000) {
+      final double value = xp / 1000000;
+      return '${value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 1)}M';
+    }
+
+    if (xp >= 1000) {
+      final double value = xp / 1000;
+      return '${value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 1)}K';
+    }
+
+    return xp.toString();
+  }
+
+  String _normalizeAchievementTitle(dynamic item) {
+    final String rawTitle =
+        (item['judul'] ?? item['title'] ?? 'Achievement').toString();
+
+    if (rawTitle.trim() == '111') {
+      return 'New Hero';
+    }
+
+    return rawTitle;
   }
 
   void _confirmLogout() {
@@ -166,7 +198,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               } catch (e) {
                 debugPrint("Logout server gagal atau timeout: $e");
               } finally {
-                SharedPreferences prefs = await SharedPreferences.getInstance();
+                final SharedPreferences prefs =
+                    await SharedPreferences.getInstance();
                 await prefs.clear();
 
                 if (!mounted) return;
@@ -193,17 +226,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   IconData _getIconData(String iconName) {
     switch (iconName) {
       case 'star':
-        return Icons.star;
+        return Icons.star_rounded;
       case 'menu_book':
-        return Icons.menu_book;
+        return Icons.menu_book_rounded;
       case 'military_tech':
-        return Icons.military_tech;
+        return Icons.military_tech_rounded;
       case 'bolt':
-        return Icons.bolt;
+        return Icons.bolt_rounded;
       case 'group_add':
-        return Icons.group_add;
+        return Icons.group_add_rounded;
       default:
-        return Icons.emoji_events;
+        return Icons.emoji_events_rounded;
     }
   }
 
@@ -223,22 +256,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       displayBio = userData!['bio'].toString();
     }
 
-    final int currentXp = int.tryParse(
-          (userData!['total_xp'] ?? 0).toString(),
-        ) ??
-        0;
-
-    final int level = int.tryParse(
-          (userData!['level'] ?? 1).toString(),
-        ) ??
-        1;
-
-    final double progress = (currentXp % 100) / 100.0;
+    final int currentXp = _toInt(userData!['total_xp']);
+    final XpLevelInfo xpInfo = XpLevelHelper.calculate(currentXp);
 
     final String avatarUrl = (userData!['avatar_url'] ?? '').toString();
     final String namaLengkap =
         (userData!['nama_lengkap'] ?? 'User').toString();
     final String email = (userData!['email'] ?? '').toString();
+
+    final String levelText =
+        xpInfo.isPro ? 'Level Pro' : 'Level ${xpInfo.level}';
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -332,7 +359,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
 
                       Text(
-                        'Level $level • $currentXp XP',
+                        '$levelText • ${_formatXp(currentXp)} XP',
                         style: const TextStyle(
                           color: Colors.grey,
                           fontSize: 16,
@@ -343,68 +370,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Card(
-                          elevation: 2,
-                          color: Colors.white.withOpacity(0.92),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'CodeQuest Progress',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 15),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Level $level',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.green,
-                                      ),
-                                    ),
-                                    Text(
-                                      '$currentXp XP',
-                                      style: const TextStyle(
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: LinearProgressIndicator(
-                                    value: progress == 0 ? 0.05 : progress,
-                                    minHeight: 12,
-                                    backgroundColor: Colors.grey[200],
-                                    valueColor:
-                                        const AlwaysStoppedAnimation<Color>(
-                                      Colors.green,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  '${100 - (currentXp % 100)} XP lagi untuk naik level!',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        child: _buildCodeQuestProgressCard(
+                          currentXp: currentXp,
+                          xpInfo: xpInfo,
                         ),
                       ),
 
@@ -476,6 +444,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: allAchievements
+                                                .where((item) =>
+                                                    _isAchievementUnlocked(item))
                                                 .take(4)
                                                 .map((item) {
                                               final String iconUrl =
@@ -485,12 +455,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                       .toString();
 
                                               final String title =
-                                                  (item['judul'] ??
-                                                          'Achievement')
-                                                      .toString();
-
-                                              final bool isUnlocked =
-                                                  _isAchievementUnlocked(item);
+                                                  _normalizeAchievementTitle(item);
 
                                               return _buildDynamicBadge(
                                                 iconUrl: iconUrl,
@@ -500,7 +465,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                       .toString(),
                                                 ),
                                                 label: title,
-                                                isUnlocked: isUnlocked,
+                                                isUnlocked: true,
                                               );
                                             }).toList(),
                                           ),
@@ -630,6 +595,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCodeQuestProgressCard({
+    required int currentXp,
+    required XpLevelInfo xpInfo,
+  }) {
+    final String levelText =
+        xpInfo.isPro ? 'Level Pro' : 'Level ${xpInfo.level}';
+
+    return Card(
+      elevation: 2,
+      color: Colors.white.withOpacity(0.92),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'CodeQuest Progress',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 15),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  levelText,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+                Text(
+                  '${_formatXp(currentXp)} XP',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: xpInfo.isPro ? 1.0 : xpInfo.progress.clamp(0.02, 1.0),
+                minHeight: 12,
+                backgroundColor: Colors.grey[200],
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Colors.green,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              xpInfo.nextLabel,
+              style: TextStyle(
+                fontSize: 12,
+                color: xpInfo.isPro ? Colors.green : Colors.grey,
+                fontWeight: xpInfo.isPro ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],

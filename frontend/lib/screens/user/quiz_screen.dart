@@ -18,6 +18,7 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen> {
   List<Map<String, dynamic>> questions = [];
   Map<int, int> userAnswers = {};
+  List<Map<String, dynamic>> wrongAnswers = [];
 
   bool isLoading = true;
   bool isSubmitting = false;
@@ -47,6 +48,7 @@ class _QuizScreenState extends State<QuizScreen> {
       moduleDeleted = false;
       questions = [];
       userAnswers.clear();
+      wrongAnswers.clear();
       currentQuizId = '';
       quizXpReward = 0;
     });
@@ -93,7 +95,16 @@ class _QuizScreenState extends State<QuizScreen> {
 
       return modules.any((module) {
         final id = module['_id']?.toString();
-        return id == widget.moduleId;
+
+        final bool isDeleted =
+            module['is_deleted'] == true ||
+            module['deleted'] == true ||
+            module['deleted_at'] != null ||
+            module['is_active'] == false ||
+            module['status'] == 'deleted' ||
+            module['status'] == 'inactive';
+
+        return id == widget.moduleId && !isDeleted;
       });
     } catch (e) {
       return false;
@@ -191,9 +202,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
     questions = parsedQuestions;
 
-    print('CURRENT QUIZ ID: $currentQuizId');
-    print('QUIZ XP REWARD: $quizXpReward');
-    print('TOTAL QUESTIONS: ${questions.length}');
+    debugPrint('CURRENT QUIZ ID: $currentQuizId');
+    debugPrint('QUIZ XP REWARD: $quizXpReward');
+    debugPrint('TOTAL QUESTIONS: ${questions.length}');
   }
 
   Map<String, dynamic> _normalizeQuestion(Map<String, dynamic> raw) {
@@ -270,6 +281,27 @@ class _QuizScreenState extends State<QuizScreen> {
     return int.tryParse(value?.toString() ?? '0') ?? 0;
   }
 
+  String _optionLetter(int index) {
+    if (index < 0 || index > 3) return '-';
+    return String.fromCharCode(65 + index);
+  }
+
+  String _optionText(Map<String, dynamic> question, int index) {
+    final List<String> opsi = List<String>.from(question['opsi'] ?? []);
+
+    if (index < 0 || index >= opsi.length) {
+      return 'Tidak diketahui';
+    }
+
+    final String text = opsi[index].trim();
+
+    if (text.isEmpty) {
+      return 'Opsi kosong';
+    }
+
+    return text;
+  }
+
   // =====================================================
   // SUBMIT QUIZ
   // =====================================================
@@ -294,15 +326,29 @@ class _QuizScreenState extends State<QuizScreen> {
 
     setState(() {
       isSubmitting = true;
+      wrongAnswers.clear();
     });
 
     int correctCount = 0;
 
     for (int i = 0; i < questions.length; i++) {
-      final int correctIdx = questions[i]['jawaban_benar'] as int;
+      final Map<String, dynamic> question = questions[i];
 
-      if (userAnswers[i] == correctIdx) {
+      final int correctIdx = question['jawaban_benar'] as int;
+      final int? userIdx = userAnswers[i];
+
+      if (userIdx == correctIdx) {
         correctCount++;
+      } else {
+        wrongAnswers.add({
+          'nomor': i + 1,
+          'pertanyaan': question['pertanyaan'] ?? '',
+          'jawaban_user_index': userIdx,
+          'jawaban_user_text':
+              userIdx == null ? 'Tidak dijawab' : _optionText(question, userIdx),
+          'jawaban_benar_index': correctIdx,
+          'jawaban_benar_text': _optionText(question, correctIdx),
+        });
       }
     }
 
@@ -314,8 +360,11 @@ class _QuizScreenState extends State<QuizScreen> {
     } else {
       await _showResultDialog(
         title: 'Coba Lagi! 💪',
-        message: 'Nilai: ${score.toInt()} / 100\nKKM: 80\nKamu belum lulus.',
+        score: score.toInt(),
+        kkm: 80,
         isSuccess: false,
+        xpAdded: 0,
+        alreadyCompleted: false,
       );
     }
 
@@ -366,10 +415,9 @@ class _QuizScreenState extends State<QuizScreen> {
         true,
       );
 
-      final List<dynamic> newAchievements =
-          result['new_achievements'] is List
-              ? result['new_achievements']
-              : [];
+      final List<dynamic> newAchievements = result['new_achievements'] is List
+          ? result['new_achievements']
+          : [];
 
       final int xpAdded = _toInt(result['xp_added'] ?? 0);
       final bool alreadyCompleted = result['already_completed'] == true;
@@ -382,10 +430,11 @@ class _QuizScreenState extends State<QuizScreen> {
 
       await _showResultDialog(
         title: alreadyCompleted ? 'Quiz Sudah Selesai' : 'Luar Biasa! 🎉',
-        message: alreadyCompleted
-            ? 'Nilai: ${score.toInt()} / 100\nQuiz ini sudah pernah diselesaikan.\nXP tidak bertambah.'
-            : 'Nilai: ${score.toInt()} / 100\nXP: +$xpAdded\nStatus: SELESAI',
+        score: score.toInt(),
+        kkm: 80,
         isSuccess: true,
+        xpAdded: xpAdded,
+        alreadyCompleted: alreadyCompleted,
       );
 
       if (!mounted) return;
@@ -417,8 +466,7 @@ class _QuizScreenState extends State<QuizScreen> {
       final String title =
           (achievement['judul'] ?? 'Achievement Baru').toString();
 
-      final String description =
-          (achievement['deskripsi'] ?? '').toString();
+      final String description = (achievement['deskripsi'] ?? '').toString();
 
       final int xpReward = _toInt(achievement['xp_reward'] ?? 0);
 
@@ -920,8 +968,11 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Future<void> _showResultDialog({
     required String title,
-    required String message,
+    required int score,
+    required int kkm,
     required bool isSuccess,
+    required int xpAdded,
+    required bool alreadyCompleted,
   }) async {
     return showDialog(
       context: context,
@@ -930,7 +981,7 @@ class _QuizScreenState extends State<QuizScreen> {
         return AlertDialog(
           backgroundColor: const Color(0xFFF5F6F8),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(22),
           ),
           title: Text(
             title,
@@ -939,11 +990,50 @@ class _QuizScreenState extends State<QuizScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          content: Text(message),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildScoreSummary(
+                    score: score,
+                    kkm: kkm,
+                    isSuccess: isSuccess,
+                    xpAdded: xpAdded,
+                    alreadyCompleted: alreadyCompleted,
+                  ),
+                  if (!isSuccess && wrongAnswers.isNotEmpty) ...[
+                    const SizedBox(height: 18),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Pembahasan Jawaban Salah',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ...wrongAnswers.map((item) {
+                      return _buildWrongAnswerItem(item);
+                    }).toList(),
+                  ],
+                ],
+              ),
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
+
+                if (!isSuccess) {
+                  setState(() {
+                    userAnswers.clear();
+                    wrongAnswers.clear();
+                  });
+                }
               },
               child: Text(
                 isSuccess ? 'Lanjut' : 'Coba Lagi',
@@ -956,6 +1046,126 @@ class _QuizScreenState extends State<QuizScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildScoreSummary({
+    required int score,
+    required int kkm,
+    required bool isSuccess,
+    required int xpAdded,
+    required bool alreadyCompleted,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isSuccess
+            ? Colors.green.withOpacity(0.08)
+            : Colors.orange.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSuccess
+              ? Colors.green.withOpacity(0.18)
+              : Colors.orange.withOpacity(0.18),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Nilai: $score / 100'),
+          Text('KKM: $kkm'),
+          const SizedBox(height: 6),
+          Text(
+            isSuccess
+                ? alreadyCompleted
+                    ? 'Quiz ini sudah pernah diselesaikan. XP tidak bertambah.'
+                    : 'Kamu lulus! XP: +$xpAdded'
+                : 'Kamu belum lulus.',
+            style: TextStyle(
+              color: isSuccess ? Colors.green : Colors.red,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWrongAnswerItem(Map<String, dynamic> item) {
+    final int? userIndex = item['jawaban_user_index'];
+    final int correctIndex = item['jawaban_benar_index'];
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.red.withOpacity(0.15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Soal ${item['nomor']}',
+            style: const TextStyle(
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 7),
+          Text(
+            item['pertanyaan'].toString(),
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Jawaban kamu:',
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            userIndex == null
+                ? 'Tidak dijawab'
+                : '${_optionLetter(userIndex)}. ${item['jawaban_user_text']}',
+            style: const TextStyle(
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            'Jawaban benar:',
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            '${_optionLetter(correctIndex)}. ${item['jawaban_benar_text']}',
+            style: const TextStyle(
+              color: Colors.green,
+              fontWeight: FontWeight.bold,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

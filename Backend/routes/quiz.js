@@ -6,6 +6,7 @@ const Module = require('../models/Module');
 const User = require('../models/User');
 const UserProgress = require('../models/UserProgress');
 const checkAndUnlockAchievements = require('../utils/checkAchievements');
+const calculateLevel = require('../utils/calculateLevel');
 
 const { upload } = require('../config/cloudinary');
 
@@ -103,7 +104,7 @@ router.post('/submit', async (req, res) => {
     });
 
     user.total_kuis_selesai = completedQuizCount;
-    user.level = Math.floor((user.total_xp || 0) / 100) + 1;
+    user.level = calculateLevel(user.total_xp || 0);
 
     await user.save();
 

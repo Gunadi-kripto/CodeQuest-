@@ -178,22 +178,37 @@ class _MateriScreenState extends State<MateriScreen> {
                             ),
                           ),
                           const SizedBox(height: 25),
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: languages.length,
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 18,
-                              mainAxisSpacing: 18,
-                              childAspectRatio: 0.9,
+                          if (languages.isEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.92),
+                                borderRadius: BorderRadius.circular(22),
+                              ),
+                              child: const Text(
+                                'Belum ada bahasa pemrograman.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          else
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: languages.length,
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 18,
+                                mainAxisSpacing: 18,
+                                childAspectRatio: 0.9,
+                              ),
+                              itemBuilder: (context, index) {
+                                final lang = languages[index];
+                                return _buildLanguageCard(lang);
+                              },
                             ),
-                            itemBuilder: (context, index) {
-                              final lang = languages[index];
-                              return _buildLanguageCard(lang);
-                            },
-                          ),
                           const SizedBox(height: 30),
                           _buildStreakBox(),
                           const SizedBox(height: 30),
@@ -248,6 +263,18 @@ class _StudentModuleListScreenState extends State<StudentModuleListScreen> {
 
     final moduleData = await ApiService.getModulesByLanguage(widget.languageId);
 
+    moduleData.sort((a, b) {
+      final int orderA = _toInt(a['urutan']);
+      final int orderB = _toInt(b['urutan']);
+
+      if (orderA != orderB) return orderA.compareTo(orderB);
+
+      final String titleA = (a['judul_modul'] ?? '').toString();
+      final String titleB = (b['judul_modul'] ?? '').toString();
+
+      return titleA.compareTo(titleB);
+    });
+
     final prefs = await SharedPreferences.getInstance();
     final userStr = prefs.getString('user_data');
 
@@ -284,7 +311,7 @@ class _StudentModuleListScreenState extends State<StudentModuleListScreen> {
               .toSet();
         }
       } catch (e) {
-        print('LOAD USER PROGRESS ERROR: $e');
+        debugPrint('LOAD USER PROGRESS ERROR: $e');
         finishedIds = {};
       }
     }
@@ -305,6 +332,13 @@ class _StudentModuleListScreenState extends State<StudentModuleListScreen> {
     }
   }
 
+  int _toInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? 0;
+  }
+
   bool _isModuleCompleted(dynamic mod) {
     final moduleId = (mod['_id'] ?? '').toString();
     return completedModuleIds.contains(moduleId);
@@ -319,6 +353,18 @@ class _StudentModuleListScreenState extends State<StudentModuleListScreen> {
     return !completedModuleIds.contains(previousModuleId);
   }
 
+  String _getPreviousModuleTitle(int index) {
+    if (index <= 0 || modules.isEmpty) return 'materi sebelumnya';
+
+    final previousModule = modules[index - 1];
+    return (previousModule['judul_modul'] ?? 'materi sebelumnya').toString();
+  }
+
+  dynamic _getPreviousModule(int index) {
+    if (index <= 0 || modules.isEmpty) return null;
+    return modules[index - 1];
+  }
+
   Future<void> _openModule(dynamic mod) async {
     await Navigator.push(
       context,
@@ -328,6 +374,183 @@ class _StudentModuleListScreenState extends State<StudentModuleListScreen> {
     );
 
     await _loadModulesAndProgress();
+  }
+
+  void _showLockedDialog({
+    required int index,
+    required dynamic lockedModule,
+  }) {
+    final String lockedTitle =
+        (lockedModule['judul_modul'] ?? 'Materi ini').toString();
+
+    final String previousTitle = _getPreviousModuleTitle(index);
+    final dynamic previousModule = _getPreviousModule(index);
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 78,
+                  height: 78,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.lock_rounded,
+                    color: Colors.red,
+                    size: 42,
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                const Text(
+                  'Materi Masih Terkunci',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Text(
+                  '"$lockedTitle" belum bisa dibaca sekarang.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.4,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.07),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Colors.green.withOpacity(0.14),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.13),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.menu_book_rounded,
+                          color: Colors.green,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Selesaikan dulu:\n$previousTitle',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            height: 1.35,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pop(dialogContext);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          side: BorderSide(color: Colors.grey.shade300),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Nanti saja',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: previousModule == null
+                            ? null
+                            : () {
+                                Navigator.pop(dialogContext);
+                                _openModule(previousModule);
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          disabledBackgroundColor: Colors.grey.shade300,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Buka Materi',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildStatCard(
@@ -394,68 +617,103 @@ class _StudentModuleListScreenState extends State<StudentModuleListScreen> {
   }
 
   Widget _buildModuleItem(
+    int index,
     int number,
     dynamic mod,
     bool isDone,
     bool isLocked,
   ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isDone ? const Color(0xFFF1F9F1) : Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: isDone ? Colors.green.withOpacity(0.3) : Colors.transparent,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 5,
+    return InkWell(
+      onTap: () {
+        if (isLocked) {
+          _showLockedDialog(
+            index: index,
+            lockedModule: mod,
+          );
+          return;
+        }
+
+        _openModule(mod);
+      },
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: isDone
+              ? const Color(0xFFF1F9F1)
+              : isLocked
+                  ? Colors.grey.shade100
+                  : Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: isDone
+                ? Colors.green.withOpacity(0.3)
+                : isLocked
+                    ? Colors.grey.withOpacity(0.15)
+                    : Colors.transparent,
           ),
-        ],
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: isDone
-              ? Colors.green
-              : (isLocked ? Colors.grey[300] : Colors.black87),
-          radius: 14,
-          child: Text(
-            '$number',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 5,
+            ),
+          ],
+        ),
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: isDone
+                ? Colors.green
+                : (isLocked ? Colors.grey[300] : Colors.black87),
+            radius: 14,
+            child: Text(
+              '$number',
+              style: TextStyle(
+                color: isLocked ? Colors.grey.shade600 : Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
-        title: Text(
-          mod['judul_modul'] ?? '',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+          title: Text(
+            mod['judul_modul'] ?? '',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: isLocked ? Colors.grey.shade500 : Colors.black87,
+            ),
+          ),
+          subtitle: Text(
+            isLocked
+                ? 'Selesaikan materi sebelumnya dulu'
+                : (mod['deskripsi'] ?? ''),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              color: isLocked ? Colors.red.shade300 : Colors.grey.shade600,
+            ),
+          ),
+          trailing: Icon(
+            isDone
+                ? Icons.check_circle
+                : (isLocked ? Icons.lock : Icons.arrow_forward_ios),
+            color: isDone
+                ? Colors.green
+                : isLocked
+                    ? Colors.grey.shade400
+                    : Colors.grey.shade500,
+            size: 20,
           ),
         ),
-        subtitle: Text(
-          mod['deskripsi'] ?? '',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 12),
-        ),
-        trailing: Icon(
-          isDone
-              ? Icons.check_circle
-              : (isLocked ? Icons.lock : Icons.arrow_forward_ios),
-          color: isDone ? Colors.green : Colors.grey[400],
-          size: 20,
-        ),
-        onTap: isLocked ? null : () => _openModule(mod),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final double progress =
+        modules.isNotEmpty ? completedCount / modules.length : 0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBFB),
       appBar: AppBar(
@@ -513,9 +771,7 @@ class _StudentModuleListScreenState extends State<StudentModuleListScreen> {
                           'Progress Kamu',
                           '$completedCount/${modules.length} Materi',
                           true,
-                          modules.isNotEmpty
-                              ? completedCount / modules.length
-                              : 0,
+                          progress,
                         ),
                         const SizedBox(width: 15),
                         _buildStatCard(
@@ -539,24 +795,40 @@ class _StudentModuleListScreenState extends State<StudentModuleListScreen> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: modules.length,
-                      itemBuilder: (context, index) {
-                        final mod = modules[index];
+                    if (modules.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Text(
+                          'Belum ada materi untuk bahasa ini.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                    else
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: modules.length,
+                        itemBuilder: (context, index) {
+                          final mod = modules[index];
 
-                        final bool isDone = _isModuleCompleted(mod);
-                        final bool isLocked = _isModuleLocked(index);
+                          final bool isDone = _isModuleCompleted(mod);
+                          final bool isLocked = _isModuleLocked(index);
 
-                        return _buildModuleItem(
-                          index + 1,
-                          mod,
-                          isDone,
-                          isLocked,
-                        );
-                      },
-                    ),
+                          return _buildModuleItem(
+                            index,
+                            index + 1,
+                            mod,
+                            isDone,
+                            isLocked,
+                          );
+                        },
+                      ),
                     const SizedBox(height: 30),
                   ],
                 ),
