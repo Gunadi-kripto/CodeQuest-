@@ -36,20 +36,14 @@ app.get('/', (req, res) => {
 
 // Koneksi MongoDB
 const dbURI = process.env.MONGO_URI;
-mongoose
-  .connect(dbURI)
+
+mongoose.connect(dbURI)
   .then(() => {
     console.log('✅ Berhasil terhubung ke MongoDB Atlas!');
-
-    if (!process.env.VERCEL) {
-      app.listen(PORT, () => {
-        console.log(`🚀 Server berjalan di port ${PORT}`);
-      });
-    }
   })
   .catch((err) => {
     console.error('❌ Gagal terhubung ke MongoDB:', err);
   });
 
-
+  
 module.exports = app;

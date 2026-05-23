@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Achievement = require('../models/Achievement');
 const UserProgress = require('../models/UserProgress');
 const Module = require('../models/Module');
+const calculateLevel = require('./calculateLevel');
 
 async function checkAndUnlockAchievements(userId) {
   const user = await User.findById(userId);

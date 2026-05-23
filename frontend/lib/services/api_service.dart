@@ -1431,4 +1431,77 @@ class ApiService {
       return [];
     }
   }
+
+  static Future<Map<String, dynamic>> getAdminUserStats() async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/admin/stats'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data'] ?? {};
+    }
+
+    return {};
+  } catch (e) {
+    print('GET ADMIN USER STATS ERROR: $e');
+    return {};
+  }
+}
+
+static Future<List<dynamic>> getAdminUserMaterials(String userId) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/admin/$userId/materials'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data'] ?? [];
+    }
+
+    return [];
+  } catch (e) {
+    print('GET ADMIN USER MATERIALS ERROR: $e');
+    return [];
+  }
+}
+
+static Future<List<dynamic>> getAdminUserQuizzes(String userId) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/admin/$userId/quizzes'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data'] ?? [];
+    }
+
+    return [];
+  } catch (e) {
+    print('GET ADMIN USER QUIZZES ERROR: $e');
+    return [];
+  }
+}
+
+static Future<List<dynamic>> getAdminUserAchievements(String userId) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/admin/$userId/achievements'),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data'] ?? [];
+    }
+
+    return [];
+  } catch (e) {
+    print('GET ADMIN USER ACHIEVEMENTS ERROR: $e');
+    return [];
+  }
+}
+
 }
