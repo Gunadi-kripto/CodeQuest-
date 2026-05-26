@@ -784,12 +784,38 @@ class ApiService {
   // 5. FUNGSI KUIS (QUIZ) - MULTIPLE SOAL V3
   // ==========================================
 
-  static Future<List<dynamic>> getQuizzes(String moduleId) async {
+  static final Map<String, List<dynamic>> _quizCache = {};
+
+  static Future<List<dynamic>> getQuizzes(
+    String moduleId, {
+    bool forceRefresh = false,
+  }) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/quizzes/$moduleId'));
-      if (response.statusCode == 200) return jsonDecode(response.body);
+      if (!forceRefresh && _quizCache.containsKey(moduleId)) {
+        return _quizCache[moduleId]!;
+      }
+
+      final response = await http
+          .get(Uri.parse('$baseUrl/quizzes/$moduleId'))
+          .timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data is List) {
+          _quizCache[moduleId] = data;
+          return data;
+        }
+
+        return [];
+      }
+
+      return [];
+    } on TimeoutException {
+      print('GET QUIZZES TIMEOUT');
       return [];
     } catch (e) {
+      print('GET QUIZZES ERROR: $e');
       return [];
     }
   }
