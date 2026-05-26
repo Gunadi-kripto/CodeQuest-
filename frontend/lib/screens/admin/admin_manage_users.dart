@@ -554,10 +554,9 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, // Background tembus pandang
+      backgroundColor: Colors.transparent, 
       body: Stack(
         children: [
-          // Background Image (Dari Kode 2)
           SizedBox.expand(
             child: Image.asset(
               'assets/coding_bg.png',
@@ -663,7 +662,6 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     );
   }
 
-  // Efek Glassmorphism dari Kode 2
   Widget _buildSearchBar() {
     return Container(
       decoration: BoxDecoration(
@@ -697,7 +695,6 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     );
   }
 
-  // Efek Glassmorphism dari Kode 2
   Widget _buildEmptySearch() {
     return Container(
       width: double.infinity,
@@ -722,7 +719,6 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     );
   }
 
-  // Efek Glassmorphism dari Kode 2
   Widget _buildSummaryCard(
     String title,
     String value,
@@ -775,7 +771,6 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     );
   }
 
-  // Efek Glassmorphism dari Kode 2
   Widget _buildUserCard(Map<String, dynamic> user) {
     final bool isAdmin = user['role'] == 'admin';
     final List<dynamic> badges = user['unlocked_achievements'] is List
@@ -967,7 +962,6 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     );
   }
 
-  // Perbaikan Overflow dari Kode 1 ditambahkan di sini
   Widget _buildClickableSmallStat({
     required IconData icon,
     required String label,
@@ -975,11 +969,11 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     required VoidCallback? onTap,
   }) {
     final child = Row(
-      mainAxisSize: MainAxisSize.min, // Dari Kode 1
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 4),
-        Flexible( // Dari Kode 1
+        Flexible(
           child: Text(
             label,
             maxLines: 1,
