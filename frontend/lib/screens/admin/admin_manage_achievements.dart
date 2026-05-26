@@ -257,59 +257,70 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      body: RefreshIndicator(
-        color: Colors.green,
-        onRefresh: _refreshAll,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 22),
-              _buildFilterCard(),
-              const SizedBox(height: 22),
-              _buildSummaryCard(),
-              const SizedBox(height: 22),
-              _buildListHeader(),
-              const SizedBox(height: 14),
-              _buildAchievementContent(),
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                height: 58,
-                child: ElevatedButton.icon(
-                  onPressed: isLanguageBasedCategory && selectedLanguage == null
-                      ? null
-                      : () => _showAchievementForm(),
-                  icon: const Icon(
-                    Icons.add,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
-                    'Tambah Achievement',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 110),
-            ],
+      body: Stack(
+        children: [
+          // Background Universal
+          SizedBox.expand(
+            child: Image.asset(
+              'assets/coding_bg.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+            ),
           ),
-        ),
+          RefreshIndicator(
+            color: Colors.green,
+            onRefresh: _refreshAll,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 22),
+                  _buildFilterCard(),
+                  const SizedBox(height: 22),
+                  _buildSummaryCard(),
+                  const SizedBox(height: 22),
+                  _buildListHeader(),
+                  const SizedBox(height: 14),
+                  _buildAchievementContent(),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 58,
+                    child: ElevatedButton.icon(
+                      onPressed: isLanguageBasedCategory && selectedLanguage == null
+                          ? null
+                          : () => _showAchievementForm(),
+                      icon: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        'Tambah Achievement',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 110),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -345,6 +356,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
               Text(
                 'Lencana',
                 style: TextStyle(
+                  color: Colors.white, // Ubah putih
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                 ),
@@ -353,7 +365,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
               Text(
                 'Kelola achievement pembelajaran',
                 style: TextStyle(
-                  color: Colors.grey,
+                  color: Colors.white70, // Ubah putih semi transparan
                   fontSize: 14,
                 ),
               ),
@@ -368,7 +380,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.92), // Glassmorphism
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: Colors.grey.shade200,
@@ -579,7 +591,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.06),
+        color: Colors.white.withOpacity(0.92), // Glassmorphism
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: Colors.green.withOpacity(0.15),
@@ -591,7 +603,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.green.withOpacity(0.15),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
@@ -624,6 +636,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
           child: Text(
             'Daftar Achievement',
             style: TextStyle(
+              color: Colors.white, // Ubah putih
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -633,7 +646,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.08),
+            color: Colors.white.withOpacity(0.92),
             borderRadius: BorderRadius.circular(14),
           ),
           child: const Icon(
@@ -686,7 +699,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.92), // Glassmorphism
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -972,7 +985,7 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.92), // Glassmorphism
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.grey.shade200,
@@ -1001,8 +1014,10 @@ class _AdminManageAchievementsState extends State<AdminManageAchievements> {
 }
 
 // =====================================================
-// FORM TAMBAH / EDIT ACHIEVEMENT
+// BAGIAN FORM TETAP SAMA (BottomSheet tidak perlu transparan)
 // =====================================================
+// Kode di bawah ini dibiarkan apa adanya seperti aslimu
+// karena Sheet dari bawah memang lebih bagus solid putih/abu.
 
 class AchievementFormSheet extends StatefulWidget {
   final List<dynamic> languages;

@@ -359,10 +359,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
     );
   }
 
-  void _showForm({
-    Map<String, dynamic>? module,
-    bool openDraft = false,
-  }) {
+  void _showForm({Map<String, dynamic>? module, bool openDraft = false}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -389,108 +386,137 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
     final bool hasDraft = ModuleDraftStore.hasDraft(widget.languageId);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.green))
-          : RefreshIndicator(
-              onRefresh: () async {
-                await _fetchModules();
-                await _fetchLanguageInfo();
-              },
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Materi',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Kelola materi pembelajaran',
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
-                    ),
-                    const SizedBox(height: 25),
-                    _buildLanguageHeaderCard(displayLanguageName),
-                    const SizedBox(height: 30),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Daftar Bab',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () => _showForm(),
-                          icon: const Icon(
-                            Icons.add,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                          label: const Text(
-                            "Tambah Bab",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 11,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-
-                    if (hasDraft) _buildDraftCard(),
-
-                    if (modules.isEmpty && !hasDraft)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(25),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            "Belum ada materi",
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: modules.length,
-                        itemBuilder: (context, index) {
-                          final mod = modules[index];
-
-                          return _buildChapterCard(index + 1, mod);
-                        },
-                      ),
-                    const SizedBox(height: 100),
-                  ],
-                ),
-              ),
+      // AppBar transparan dengan panah back warna putih
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Stack(
+        children: [
+          // Background Universal
+          SizedBox.expand(
+            child: Image.asset(
+              'assets/coding_bg.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
             ),
+          ),
+          SafeArea(
+            child: isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.green),
+                  )
+                : RefreshIndicator(
+                    onRefresh: () async {
+                      await _fetchModules();
+                      await _fetchLanguageInfo();
+                    },
+                    color: Colors.green,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Materi',
+                            style: TextStyle(
+                              color: Colors.white, // Ubah ke putih
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Kelola materi pembelajaran',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ), // Putih transparan
+                          ),
+                          const SizedBox(height: 25),
+                          _buildLanguageHeaderCard(displayLanguageName),
+                          const SizedBox(height: 30),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Daftar Bab',
+                                style: TextStyle(
+                                  color: Colors.white, // Ubah ke putih
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: () => _showForm(),
+                                icon: const Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                label: const Text(
+                                  "Tambah Bab",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 11,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+
+                          if (hasDraft) _buildDraftCard(),
+
+                          if (modules.isEmpty && !hasDraft)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(25),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(
+                                  0.92,
+                                ), // Glassmorphism
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  "Belum ada materi",
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: modules.length,
+                              itemBuilder: (context, index) {
+                                final mod = modules[index];
+                                return _buildChapterCard(index + 1, mod);
+                              },
+                            ),
+                          const SizedBox(height: 100),
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -503,7 +529,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.92), // Glassmorphism
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -669,11 +695,9 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.08),
+        color: Colors.white.withOpacity(0.95), // Glassmorphism draft
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.orange.withOpacity(0.35),
-        ),
+        border: Border.all(color: Colors.orange.withOpacity(0.5)),
       ),
       child: Row(
         children: [
@@ -684,10 +708,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
               color: Colors.orange.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.edit_note_rounded,
-              color: Colors.orange,
-            ),
+            child: const Icon(Icons.edit_note_rounded, color: Colors.orange),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -696,10 +717,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
               children: [
                 const Text(
                   'Draft - Belum Disimpan',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -708,10 +726,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
                       : 'Lanjutkan materi yang belum disimpan',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 13,
-                  ),
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
               ],
             ),
@@ -724,11 +739,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: const Icon(
-                Icons.edit,
-                size: 18,
-                color: Colors.green,
-              ),
+              icon: const Icon(Icons.edit, size: 18, color: Colors.green),
               onPressed: () => _showForm(openDraft: true),
             ),
           ),
@@ -763,7 +774,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.92), // Glassmorphism
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -829,7 +840,7 @@ class _AdminManageMateriState extends State<AdminManageMateri> {
 }
 
 // =====================================================
-// DRAFT STORE MATERI
+// SISA KODE (Draft Store & MultiContentForm) SAMA SAJA
 // =====================================================
 
 class ModuleDraftData {
@@ -865,10 +876,6 @@ class ModuleDraftStore {
     return _drafts.containsKey(key(languageId));
   }
 }
-
-// =====================================================
-// FORM INPUT MATERI
-// =====================================================
 
 class MultiContentForm extends StatefulWidget {
   final String languageId;
@@ -1002,10 +1009,7 @@ class _MultiContentFormState extends State<MultiContentForm> {
         final file = item['file'];
 
         if (file is File) {
-          draftContents.add({
-            'tipe': 'image',
-            'path': file.path,
-          });
+          draftContents.add({'tipe': 'image', 'path': file.path});
         }
       }
     }
@@ -1052,19 +1056,12 @@ class _MultiContentFormState extends State<MultiContentForm> {
           actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
           title: const Row(
             children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: Colors.red,
-                size: 28,
-              ),
+              Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'Peringatan',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 19,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
                 ),
               ),
             ],
