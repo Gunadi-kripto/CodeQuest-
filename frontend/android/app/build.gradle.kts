@@ -38,18 +38,18 @@ android {
         }
     }
 
-    signingConfigs {
-        release {
-            keyAlias 'upload'
-            keyPassword 'codequest123'
-            storeFile file('upload-keystore.jks')
-            storePassword 'codequest123'
+     signingConfigs {
+        create("release") {
+            keyAlias = "upload"
+            keyPassword = "codequest123"
+            storeFile = file("upload-keystore.jks")
+            storePassword = "codequest123"
         }
     }
 
     buildTypes {
-        release {
-            signingConfig signingConfigs.release
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
