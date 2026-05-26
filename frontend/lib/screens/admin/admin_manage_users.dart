@@ -522,12 +522,17 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            trailing,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
+          Flexible(
+            child: Text(
+              trailing,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
             ),
           ),
         ],
@@ -552,7 +557,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
       backgroundColor: Colors.transparent, // Background tembus pandang
       body: Stack(
         children: [
-          // Background Image
+          // Background Image (Dari Kode 2)
           SizedBox.expand(
             child: Image.asset(
               'assets/coding_bg.png',
@@ -584,7 +589,8 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
                           ),
                           const Text(
                             'Kelola semua pengguna aplikasi',
-                            style: TextStyle(color: Colors.black54, fontSize: 14),
+                            style: TextStyle(
+                                color: Colors.black54, fontSize: 14),
                           ),
                           const SizedBox(height: 25),
                           GridView.count(
@@ -597,25 +603,33 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
                             children: [
                               _buildSummaryCard(
                                 'Total Users',
-                                isStatsLoading ? '...' : formatNumber(totalUsers),
+                                isStatsLoading
+                                    ? '...'
+                                    : formatNumber(totalUsers),
                                 Icons.people_outline,
                                 Colors.green,
                               ),
                               _buildSummaryCard(
                                 'Total XP',
-                                isStatsLoading ? '...' : formatNumber(totalXP),
+                                isStatsLoading
+                                    ? '...'
+                                    : formatNumber(totalXP),
                                 Icons.stars_outlined,
                                 Colors.purple,
                               ),
                               _buildSummaryCard(
                                 'Kuis Dikerjakan',
-                                isStatsLoading ? '...' : formatNumber(totalQuiz),
+                                isStatsLoading
+                                    ? '...'
+                                    : formatNumber(totalQuiz),
                                 Icons.quiz_outlined,
                                 Colors.orange,
                               ),
                               _buildSummaryCard(
                                 'Materi Selesai',
-                                isStatsLoading ? '...' : formatNumber(totalMateri),
+                                isStatsLoading
+                                    ? '...'
+                                    : formatNumber(totalMateri),
                                 Icons.menu_book_outlined,
                                 Colors.blue,
                               ),
@@ -633,7 +647,8 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
                               itemCount: filteredUsers.length,
                               itemBuilder: (context, index) {
                                 return _buildUserCard(
-                                  Map<String, dynamic>.from(filteredUsers[index]),
+                                  Map<String, dynamic>.from(
+                                      filteredUsers[index]),
                                 );
                               },
                             ),
@@ -648,10 +663,11 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     );
   }
 
+  // Efek Glassmorphism dari Kode 2
   Widget _buildSearchBar() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92), // Glassmorphism Transparan
+        color: Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -681,12 +697,13 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     );
   }
 
+  // Efek Glassmorphism dari Kode 2
   Widget _buildEmptySearch() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92), // Glassmorphism Transparan
+        color: Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(18),
       ),
       child: const Column(
@@ -705,6 +722,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     );
   }
 
+  // Efek Glassmorphism dari Kode 2
   Widget _buildSummaryCard(
     String title,
     String value,
@@ -714,7 +732,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92), // Glassmorphism Transparan
+        color: Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
@@ -757,6 +775,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     );
   }
 
+  // Efek Glassmorphism dari Kode 2
   Widget _buildUserCard(Map<String, dynamic> user) {
     final bool isAdmin = user['role'] == 'admin';
     final List<dynamic> badges = user['unlocked_achievements'] is List
@@ -772,7 +791,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92), // Glassmorphism Transparan
+        color: Colors.white.withOpacity(0.92),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
@@ -948,6 +967,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     );
   }
 
+  // Perbaikan Overflow dari Kode 1 ditambahkan di sini
   Widget _buildClickableSmallStat({
     required IconData icon,
     required String label,
@@ -955,15 +975,20 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     required VoidCallback? onTap,
   }) {
     final child = Row(
+      mainAxisSize: MainAxisSize.min, // Dari Kode 1
       children: [
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: Colors.black54,
+        Flexible( // Dari Kode 1
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
           ),
         ),
       ],
