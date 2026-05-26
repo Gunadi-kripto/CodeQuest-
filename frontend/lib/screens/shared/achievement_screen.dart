@@ -21,11 +21,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
   bool isLoading = true;
   String selectedFilter = 'Semua';
 
-  final List<String> filters = [
-    'Semua',
-    'Terbuka',
-    'Terkunci',
-  ];
+  final List<String> filters = ['Semua', 'Terbuka', 'Terkunci'];
 
   @override
   void initState() {
@@ -88,26 +84,29 @@ class _AchievementScreenState extends State<AchievementScreen> {
     if (raw == null) return [];
     if (raw is! List) return [];
 
-    return raw.map((item) {
-      if (item is String) return item;
+    return raw
+        .map((item) {
+          if (item is String) return item;
 
-      if (item is Map) {
-        return item['achievement_id']?['_id'] ??
-            item['achievement_id'] ??
-            item['_id'] ??
-            item['id'] ??
-            '';
-      }
+          if (item is Map) {
+            return item['achievement_id']?['_id'] ??
+                item['achievement_id'] ??
+                item['_id'] ??
+                item['id'] ??
+                '';
+          }
 
-      return item.toString();
-    }).where((id) {
-      return id.toString().isNotEmpty;
-    }).toList();
+          return item.toString();
+        })
+        .where((id) {
+          return id.toString().isNotEmpty;
+        })
+        .toList();
   }
 
   bool _isAchievementUnlocked(dynamic achievement) {
-    final String achievementId =
-        (achievement['_id'] ?? achievement['id'] ?? '').toString();
+    final String achievementId = (achievement['_id'] ?? achievement['id'] ?? '')
+        .toString();
 
     return unlockedIds.any((id) => id.toString() == achievementId);
   }
@@ -143,8 +142,8 @@ class _AchievementScreenState extends State<AchievementScreen> {
   // =====================================================
 
   String _getAchievementTitle(dynamic item) {
-    final String rawTitle =
-        (item['judul'] ?? item['title'] ?? 'Achievement').toString();
+    final String rawTitle = (item['judul'] ?? item['title'] ?? 'Achievement')
+        .toString();
 
     if (rawTitle.trim() == '111') {
       return 'New Hero';
@@ -154,8 +153,9 @@ class _AchievementScreenState extends State<AchievementScreen> {
   }
 
   String _getAchievementDescription(dynamic item) {
-    final String rawTitle =
-        (item['judul'] ?? item['title'] ?? '').toString().trim();
+    final String rawTitle = (item['judul'] ?? item['title'] ?? '')
+        .toString()
+        .trim();
 
     final String rawDescription =
         (item['deskripsi'] ?? item['description'] ?? '').toString();
@@ -273,10 +273,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
       appBar: AppBar(
         title: const Text(
           'Achievements',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.orange,
         elevation: 0,
@@ -285,80 +282,73 @@ class _AchievementScreenState extends State<AchievementScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/Achievement.jpeg',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/Achievement.jpeg', fit: BoxFit.cover),
           ),
           Positioned.fill(
-            child: Container(
-              color: Colors.white.withOpacity(0.70),
-            ),
+            child: Container(color: Colors.white.withOpacity(0.70)),
           ),
           isLoading
               ? const Center(
                   child: CircularProgressIndicator(color: Colors.orange),
                 )
               : allAchievements.isEmpty
-                  ? _buildEmptyState()
-                  : RefreshIndicator(
-                      color: Colors.orange,
-                      onRefresh: _loadData,
-                      child: CustomScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        slivers: [
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildProgressCard(progress),
-                                  const SizedBox(height: 16),
-                                  _buildFilterChips(),
-                                  const SizedBox(height: 18),
-                                  _buildSectionHeader(),
-                                  const SizedBox(height: 12),
-                                ],
-                              ),
-                            ),
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  color: Colors.orange,
+                  onRefresh: _loadData,
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildProgressCard(progress),
+                              const SizedBox(height: 16),
+                              _buildFilterChips(),
+                              const SizedBox(height: 18),
+                              _buildSectionHeader(),
+                              const SizedBox(height: 12),
+                            ],
                           ),
-                          if (filteredAchievements.isEmpty)
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.all(18),
-                                child: _buildFilterEmptyState(),
-                              ),
-                            )
-                          else
-                            SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
-                              sliver: SliverGrid(
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                        ),
+                      ),
+                      if (filteredAchievements.isEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.all(18),
+                            child: _buildFilterEmptyState(),
+                          ),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
+                          sliver: SliverGrid(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
                                   crossAxisSpacing: 14,
                                   mainAxisSpacing: 14,
-                                  childAspectRatio: 0.78,
+                                  childAspectRatio: 0.64,
                                 ),
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, index) {
-                                    final item = filteredAchievements[index];
-                                    final bool isUnlocked =
-                                        _isAchievementUnlocked(item);
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              final item = filteredAchievements[index];
+                              final bool isUnlocked = _isAchievementUnlocked(
+                                item,
+                              );
 
-                                    return _buildAchievementCard(
-                                      item,
-                                      isUnlocked,
-                                    );
-                                  },
-                                  childCount: filteredAchievements.length,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+                              return _buildAchievementCard(item, isUnlocked);
+                            }, childCount: filteredAchievements.length),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
         ],
       ),
     );
@@ -461,7 +451,9 @@ class _AchievementScreenState extends State<AchievementScreen> {
               duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: selected ? Colors.orange : Colors.white.withOpacity(0.94),
+                color: selected
+                    ? Colors.orange
+                    : Colors.white.withOpacity(0.94),
                 borderRadius: BorderRadius.circular(100),
                 border: Border.all(
                   color: selected ? Colors.orange : Colors.grey.shade200,
@@ -549,18 +541,13 @@ class _AchievementScreenState extends State<AchievementScreen> {
             const SizedBox(height: 14),
             const Text(
               'Belum Ada Achievement',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 18,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
             ),
             const SizedBox(height: 8),
             Text(
               'Admin belum membuat pencapaian apa pun.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -611,8 +598,8 @@ class _AchievementScreenState extends State<AchievementScreen> {
     final String iconUrl = (item['icon_url'] ?? item['icon'] ?? '').toString();
     final String iconName = (item['icon'] ?? 'emoji_events').toString();
 
-    final String syaratTipe =
-        (item['syarat_tipe'] ?? item['kategori'] ?? '').toString();
+    final String syaratTipe = (item['syarat_tipe'] ?? item['kategori'] ?? '')
+        .toString();
 
     final String syaratNilai = (item['syarat_nilai'] ?? '0').toString();
 
@@ -687,7 +674,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
                     iconUrl: iconUrl,
                     iconName: iconName,
                     isUnlocked: isUnlocked,
-                    size: 64,
+                    size: 56,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -763,9 +750,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFFF8F6EF),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         contentPadding: const EdgeInsets.fromLTRB(22, 22, 22, 10),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -782,10 +767,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 21,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 21),
             ),
             const SizedBox(height: 8),
             Text(
@@ -808,19 +790,11 @@ class _AchievementScreenState extends State<AchievementScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.flag_rounded,
-                    color: rarityColor,
-                    size: 20,
-                  ),
+                  Icon(Icons.flag_rounded, color: rarityColor, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Syarat: ${_getRequirementText(
-                        syaratTipe: syaratTipe,
-                        syaratNilai: syaratNilai,
-                        title: title,
-                      )}',
+                      'Syarat: ${_getRequirementText(syaratTipe: syaratTipe, syaratNilai: syaratNilai, title: title)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12.5,
@@ -853,10 +827,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 11,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
               decoration: BoxDecoration(
                 color: isUnlocked
                     ? Colors.green.withOpacity(0.10)
@@ -880,10 +851,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text(
               'Tutup',
-              style: TextStyle(
-                color: Colors.grey,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -897,10 +865,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 10,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: color.withOpacity(0.11),
         borderRadius: BorderRadius.circular(14),
@@ -908,11 +873,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 16,
-          ),
+          Icon(icon, color: color, size: 16),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
@@ -968,19 +929,13 @@ class _AchievementScreenState extends State<AchievementScreen> {
                   errorBuilder: (context, error, stackTrace) {
                     return FittedBox(
                       fit: BoxFit.contain,
-                      child: Icon(
-                        _getIconData(iconName),
-                        color: fallbackColor,
-                      ),
+                      child: Icon(_getIconData(iconName), color: fallbackColor),
                     );
                   },
                 )
               : FittedBox(
                   fit: BoxFit.contain,
-                  child: Icon(
-                    _getIconData(iconName),
-                    color: fallbackColor,
-                  ),
+                  child: Icon(_getIconData(iconName), color: fallbackColor),
                 ),
         ),
       ),
