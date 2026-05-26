@@ -37,6 +37,21 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    signingConfigs {
+        release {
+            keyAlias 'upload'
+            keyPassword 'codequest123'
+            storeFile file('upload-keystore.jks')
+            storePassword 'codequest123'
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
 }
 
 flutter {
