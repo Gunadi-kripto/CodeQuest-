@@ -213,7 +213,10 @@ router.get('/search', async (req, res) => {
     const users = await User.find({
       _id: { $ne: currentUserId },
       role: { $ne: 'admin' },
-      nama_lengkap: { $regex: query, $options: 'i' }, // ← hapus $or, tinggalkan ini saja
+      $or: [
+        { nama_lengkap: { $regex: query, $options: 'i' } },
+        { email: { $regex: query, $options: 'i' } },
+      ],
     }).select('nama_lengkap email avatar_url level total_xp bio');
 
     return res.status(200).json(users);
