@@ -1,3 +1,5 @@
+// lib/screens/home_screen.dart
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -8,7 +10,7 @@ import '../../services/api_service.dart';
 import '../../utils/xp_level_helper.dart';
 import 'leaderboard_screen.dart';
 import 'materi_detail_screen.dart';
-import 'materi_screen.dart';
+import 'materi_screen.dart'; // Tetap di-import untuk jaga-jaga
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,11 +27,12 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoading = true;
   bool isContinueLoading = true;
 
+  // --- PERUBAHAN 1: Menambahkan 'languageName' sebagai kunci pencarian ---
   final List<Map<String, String>> _allQuests = [
-    {'title': 'Misi Harian:\nPython Loop', 'image': 'assets/python.png'},
-    {'title': 'Misi Harian:\nJava Variable', 'image': 'assets/java.png'},
-    {'title': 'Misi Harian:\nC++ Basics', 'image': 'assets/cpp.png'},
-    {'title': 'Misi Harian:\nHTML Tags', 'image': 'assets/html.png'},
+    {'title': 'Misi Harian:\nPython Loop', 'image': 'assets/python.png', 'languageName': 'Python'},
+    {'title': 'Misi Harian:\nJava Variable', 'image': 'assets/java.png', 'languageName': 'Java'},
+    {'title': 'Misi Harian:\nC++ Basics', 'image': 'assets/cpp.png', 'languageName': 'C++'},
+    {'title': 'Misi Harian:\nHTML Tags', 'image': 'assets/html.png', 'languageName': 'HTML'},
   ];
 
   int _questIndex = 0;
@@ -95,9 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // =====================================================
   // LANJUT BELAJAR
-  // - Tidak ambil materi yang sudah dihapus
-  // - Tidak ambil materi dari bahasa yang sudah dihapus
-  // - Bab harus berurutan
   // =====================================================
 
   Future<void> _loadContinueLearning() async {
@@ -702,6 +702,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: _buildQuestCard(
                     firstQuest['title']!,
                     firstQuest['image']!,
+                    firstQuest['languageName']!, // Parsing languageName
                     key: ValueKey('q1_$_questIndex'),
                   ),
                 ),
@@ -723,6 +724,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: _buildQuestCard(
                     secondQuest['title']!,
                     secondQuest['image']!,
+                    secondQuest['languageName']!, // Parsing languageName
                     key: ValueKey('q2_$_questIndex'),
                   ),
                 ),
@@ -734,16 +736,60 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildQuestCard(String title, String imagePath, {Key? key}) {
+  // --- PERUBAHAN 2: Fungsi untuk mencari bahasa di API dan melempar ke StudentModuleListScreen ---
+  Widget _buildQuestCard(String title, String imagePath, String languageNameTarget, {Key? key}) {
     return GestureDetector(
       key: key,
       onTap: () async {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const MateriScreen(),
-          ),
+        // 1. Tampilkan loading sebentar (opsional tapi bagus untuk UX)
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.green)),
         );
+
+        try {
+          // 2. Tarik daftar semua bahasa dari API
+          final List<dynamic> languages = await ApiService.getLanguages();
+          
+          // 3. Cari bahasa yang cocok dengan 'languageNameTarget' (misal: "Python")
+          final targetLang = languages.firstWhere(
+            (lang) => (lang['nama_bahasa'] ?? '').toString().toLowerCase() == languageNameTarget.toLowerCase(),
+            orElse: () => null,
+          );
+
+          // Tutup loading
+          Navigator.pop(context);
+
+          // 4. Jika bahasanya ketemu, lempar langsung ke StudentModuleListScreen
+          if (targetLang != null) {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StudentModuleListScreen(
+                  languageId: (targetLang['_id'] ?? '').toString(),
+                  languageName: (targetLang['nama_bahasa'] ?? '').toString(),
+                  iconUrl: (targetLang['icon_url'] ?? '').toString(),
+                ),
+              ),
+            );
+          } else {
+            // Jika bahasa tidak ada di database, lemparkan ke materi utama saja
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Bahasa $languageNameTarget belum tersedia!'), backgroundColor: Colors.orange),
+            );
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MateriScreen()),
+            );
+          }
+        } catch (e) {
+          Navigator.pop(context); // Tutup loading jika error
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MateriScreen()),
+          );
+        }
 
         await _loadData();
       },

@@ -463,15 +463,7 @@ class _MateriDetailScreenState extends State<MateriDetailScreen> {
             fontSize: 18,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.bookmark_border,
-              color: Colors.black,
-            ),
-            onPressed: () {},
-          ),
-        ],
+        // BAGIAN ACTIONS BOOKMARK SUDAH DIHAPUS DI SINI
       ),
       body: isCheckingAccess
           ? const Center(
