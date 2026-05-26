@@ -554,7 +554,6 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-<<<<<<< HEAD
       backgroundColor: const Color(0xFFF8F9FA),
       body: isLoading
           ? const Center(
@@ -582,43 +581,59 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
                       style: TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                     const SizedBox(height: 25),
-                    GridView.count(
-                      crossAxisCount: 2,
+
+                    GridView.builder(
+                      itemCount: 4,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.4,
-                      children: [
-                        _buildSummaryCard(
-                          'Total Users',
-                          isStatsLoading ? '...' : formatNumber(totalUsers),
-                          Icons.people_outline,
-                          Colors.green,
-                        ),
-                        _buildSummaryCard(
-                          'Total XP',
-                          isStatsLoading ? '...' : formatNumber(totalXP),
-                          Icons.stars_outlined,
-                          Colors.purple,
-                        ),
-                        _buildSummaryCard(
-                          'Kuis Dikerjakan',
-                          isStatsLoading ? '...' : formatNumber(totalQuiz),
-                          Icons.quiz_outlined,
-                          Colors.orange,
-                        ),
-                        _buildSummaryCard(
-                          'Materi Selesai',
-                          isStatsLoading ? '...' : formatNumber(totalMateri),
-                          Icons.menu_book_outlined,
-                          Colors.blue,
-                        ),
-                      ],
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        mainAxisExtent: 142,
+                      ),
+                      itemBuilder: (context, index) {
+                        final cards = [
+                          _buildSummaryCard(
+                            title: 'Total Users',
+                            value:
+                                isStatsLoading ? '...' : formatNumber(totalUsers),
+                            icon: Icons.people_outline,
+                            color: Colors.green,
+                          ),
+                          _buildSummaryCard(
+                            title: 'Total XP',
+                            value:
+                                isStatsLoading ? '...' : formatNumber(totalXP),
+                            icon: Icons.stars_outlined,
+                            color: Colors.purple,
+                          ),
+                          _buildSummaryCard(
+                            title: 'Kuis Dikerjakan',
+                            value:
+                                isStatsLoading ? '...' : formatNumber(totalQuiz),
+                            icon: Icons.quiz_outlined,
+                            color: Colors.orange,
+                          ),
+                          _buildSummaryCard(
+                            title: 'Materi Selesai',
+                            value: isStatsLoading
+                                ? '...'
+                                : formatNumber(totalMateri),
+                            icon: Icons.menu_book_outlined,
+                            color: Colors.blue,
+                          ),
+                        ];
+
+                        return cards[index];
+                      },
                     ),
+
                     const SizedBox(height: 25),
                     _buildSearchBar(),
                     const SizedBox(height: 20),
+
                     if (filteredUsers.isEmpty)
                       _buildEmptySearch()
                     else
@@ -632,130 +647,90 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
                           );
                         },
                       ),
-                    const SizedBox(height: 50),
+
+                    const SizedBox(height: 80),
                   ],
                 ),
               ),
             ),
-=======
-      backgroundColor: Colors.transparent, 
-      body: Stack(
-        children: [
-          SizedBox.expand(
-            child: Image.asset(
-              'assets/coding_bg.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-            ),
+    );
+  }
+
+  Widget _buildSummaryCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.035),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
-          isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.green),
-                )
-              : SafeArea(
-                  child: RefreshIndicator(
-                    onRefresh: _loadAllData,
-                    color: Colors.green,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Users',
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const Text(
-                            'Kelola semua pengguna aplikasi',
-                            style: TextStyle(
-                                color: Colors.black54, fontSize: 14),
-                          ),
-                          const SizedBox(height: 25),
-                          GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1.4,
-                            children: [
-                              _buildSummaryCard(
-                                'Total Users',
-                                isStatsLoading
-                                    ? '...'
-                                    : formatNumber(totalUsers),
-                                Icons.people_outline,
-                                Colors.green,
-                              ),
-                              _buildSummaryCard(
-                                'Total XP',
-                                isStatsLoading
-                                    ? '...'
-                                    : formatNumber(totalXP),
-                                Icons.stars_outlined,
-                                Colors.purple,
-                              ),
-                              _buildSummaryCard(
-                                'Kuis Dikerjakan',
-                                isStatsLoading
-                                    ? '...'
-                                    : formatNumber(totalQuiz),
-                                Icons.quiz_outlined,
-                                Colors.orange,
-                              ),
-                              _buildSummaryCard(
-                                'Materi Selesai',
-                                isStatsLoading
-                                    ? '...'
-                                    : formatNumber(totalMateri),
-                                Icons.menu_book_outlined,
-                                Colors.blue,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 25),
-                          _buildSearchBar(),
-                          const SizedBox(height: 20),
-                          if (filteredUsers.isEmpty)
-                            _buildEmptySearch()
-                          else
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: filteredUsers.length,
-                              itemBuilder: (context, index) {
-                                return _buildUserCard(
-                                  Map<String, dynamic>.from(
-                                      filteredUsers[index]),
-                                );
-                              },
-                            ),
-                          const SizedBox(height: 50),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
         ],
       ),
->>>>>>> 49f1bc266d5d916cb4492b595c5fe88b926b79b0
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.10),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 25,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11.5,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildSearchBar() {
     return Container(
       decoration: BoxDecoration(
-<<<<<<< HEAD
         color: Colors.white,
-=======
-        color: Colors.white.withOpacity(0.92),
->>>>>>> 49f1bc266d5d916cb4492b595c5fe88b926b79b0
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -778,7 +753,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
                   icon: const Icon(Icons.close, color: Colors.grey),
                 ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );
@@ -789,7 +764,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
       width: double.infinity,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: const Column(
@@ -801,58 +776,6 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
             style: TextStyle(
               color: Colors.grey,
               fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: Colors.black87,
-            ),
-          ),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -875,7 +798,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
