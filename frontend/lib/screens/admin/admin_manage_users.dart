@@ -549,10 +549,10 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, // Fix agar background terekspos
+      backgroundColor: Colors.transparent, // Background tembus pandang
       body: Stack(
         children: [
-          // Background Universal
+          // Background Image
           SizedBox.expand(
             child: Image.asset(
               'assets/coding_bg.png',
