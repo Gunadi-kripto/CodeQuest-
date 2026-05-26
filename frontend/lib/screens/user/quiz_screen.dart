@@ -6,10 +6,7 @@ import '../../services/api_service.dart';
 class QuizScreen extends StatefulWidget {
   final String? moduleId;
 
-  const QuizScreen({
-    super.key,
-    this.moduleId,
-  });
+  const QuizScreen({super.key, this.moduleId});
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -39,7 +36,7 @@ class _QuizScreenState extends State<QuizScreen> {
   // LOAD DATA
   // =====================================================
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool forceRefresh = false}) async {
     if (!mounted) return;
 
     setState(() {
@@ -65,22 +62,16 @@ class _QuizScreenState extends State<QuizScreen> {
       return;
     }
 
-    final bool stillExists = await _checkModuleStillExists();
+    try {
+      await _checkFinishedStatus();
+      await _loadQuizzes(forceRefresh: forceRefresh);
+    } catch (e) {
+      if (!mounted) return;
 
-    if (!mounted) return;
-
-    if (!stillExists) {
       setState(() {
-        isLoading = false;
-        moduleDeleted = true;
-        errorMessage = 'Materi ini sudah dihapus oleh admin.';
+        errorMessage = 'Gagal memuat kuis.';
       });
-
-      return;
     }
-
-    await _checkFinishedStatus();
-    await _loadQuizzes();
 
     if (!mounted) return;
 
@@ -89,26 +80,8 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
-  Future<bool> _checkModuleStillExists() async {
-    try {
-      final modules = await ApiService.getModules();
-
-      return modules.any((module) {
-        final id = module['_id']?.toString();
-
-        final bool isDeleted =
-            module['is_deleted'] == true ||
-            module['deleted'] == true ||
-            module['deleted_at'] != null ||
-            module['is_active'] == false ||
-            module['status'] == 'deleted' ||
-            module['status'] == 'inactive';
-
-        return id == widget.moduleId && !isDeleted;
-      });
-    } catch (e) {
-      return false;
-    }
+  Future<void> _refreshQuiz() async {
+    await _loadData(forceRefresh: true);
   }
 
   Future<void> _checkFinishedStatus() async {
@@ -118,8 +91,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
       if (userStr != null && widget.moduleId != null) {
         final Map<String, dynamic> userData = jsonDecode(userStr);
-        final String userId =
-            (userData['id'] ?? userData['_id'] ?? '').toString();
+        final String userId = (userData['id'] ?? userData['_id'] ?? '')
+            .toString();
 
         hasFinished =
             prefs.getBool('quiz_done_${userId}_${widget.moduleId}') ?? false;
@@ -129,9 +102,12 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  Future<void> _loadQuizzes() async {
+  Future<void> _loadQuizzes({bool forceRefresh = false}) async {
     try {
-      final data = await ApiService.getQuizzes(widget.moduleId!);
+      final data = await ApiService.getQuizzes(
+        widget.moduleId!,
+        forceRefresh: forceRefresh,
+      );
 
       if (!mounted) return;
 
@@ -146,9 +122,7 @@ class _QuizScreenState extends State<QuizScreen> {
     } catch (e) {
       if (!mounted) return;
 
-      setState(() {
-        errorMessage = 'Gagal mengambil data kuis.';
-      });
+      errorMessage = 'Gagal mengambil data kuis.';
     }
   }
 
@@ -186,7 +160,9 @@ class _QuizScreenState extends State<QuizScreen> {
             currentQuizId = item['_id'].toString();
           }
 
-          final normalized = _normalizeQuestion(Map<String, dynamic>.from(item));
+          final normalized = _normalizeQuestion(
+            Map<String, dynamic>.from(item),
+          );
           parsedQuestions.add(normalized);
 
           if (quizXpReward == 0 && item['xp_reward'] != null) {
@@ -344,16 +320,18 @@ class _QuizScreenState extends State<QuizScreen> {
           'nomor': i + 1,
           'pertanyaan': question['pertanyaan'] ?? '',
           'jawaban_user_index': userIdx,
-          'jawaban_user_text':
-              userIdx == null ? 'Tidak dijawab' : _optionText(question, userIdx),
+          'jawaban_user_text': userIdx == null
+              ? 'Tidak dijawab'
+              : _optionText(question, userIdx),
           'jawaban_benar_index': correctIdx,
           'jawaban_benar_text': _optionText(question, correctIdx),
         });
       }
     }
 
-    final double score =
-        questions.isEmpty ? 0 : (correctCount / questions.length) * 100;
+    final double score = questions.isEmpty
+        ? 0
+        : (correctCount / questions.length) * 100;
 
     if (score >= 80) {
       await _handleQuizSuccess(score);
@@ -386,8 +364,8 @@ class _QuizScreenState extends State<QuizScreen> {
       }
 
       final Map<String, dynamic> userData = jsonDecode(userStr);
-      final String userId =
-          (userData['id'] ?? userData['_id'] ?? '').toString();
+      final String userId = (userData['id'] ?? userData['_id'] ?? '')
+          .toString();
 
       if (userId.isEmpty) {
         _showSnackBar('ID user tidak valid.', Colors.red);
@@ -410,10 +388,7 @@ class _QuizScreenState extends State<QuizScreen> {
         return;
       }
 
-      await prefs.setBool(
-        'quiz_done_${userId}_${widget.moduleId}',
-        true,
-      );
+      await prefs.setBool('quiz_done_${userId}_${widget.moduleId}', true);
 
       final List<dynamic> newAchievements = result['new_achievements'] is List
           ? result['new_achievements']
@@ -463,8 +438,8 @@ class _QuizScreenState extends State<QuizScreen> {
     for (final achievement in achievements) {
       if (!mounted) return;
 
-      final String title =
-          (achievement['judul'] ?? 'Achievement Baru').toString();
+      final String title = (achievement['judul'] ?? 'Achievement Baru')
+          .toString();
 
       final String description = (achievement['deskripsi'] ?? '').toString();
 
@@ -519,10 +494,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   Text(
                     description,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                    ),
+                    style: const TextStyle(color: Colors.grey, fontSize: 14),
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -567,47 +539,41 @@ class _QuizScreenState extends State<QuizScreen> {
       appBar: AppBar(
         title: const Text(
           'Kuis Pilihan Ganda',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Colors.green,
-              ),
-            )
+          ? const Center(child: CircularProgressIndicator(color: Colors.green))
           : moduleDeleted
-              ? _deletedState()
-              : questions.isEmpty
-                  ? _emptyQuizState()
-                  : RefreshIndicator(
-                      color: Colors.green,
-                      onRefresh: _loadData,
-                      child: Column(
-                        children: [
-                          if (hasFinished) _finishedBanner(),
-                          _quizInfoHeader(),
-                          Expanded(
-                            child: ListView.builder(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.all(16),
-                              itemCount: questions.length,
-                              itemBuilder: (context, index) {
-                                final q = questions[index];
+          ? _deletedState()
+          : questions.isEmpty
+          ? _emptyQuizState()
+          : RefreshIndicator(
+              color: Colors.green,
+              onRefresh: _refreshQuiz,
+              child: Column(
+                children: [
+                  if (hasFinished) _finishedBanner(),
+                  _quizInfoHeader(),
+                  Expanded(
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      itemCount: questions.length,
+                      itemBuilder: (context, index) {
+                        final q = questions[index];
 
-                                return _questionCard(index, q);
-                              },
-                            ),
-                          ),
-                          _submitButton(),
-                        ],
-                      ),
+                        return _questionCard(index, q);
+                      },
                     ),
+                  ),
+                  _submitButton(),
+                ],
+              ),
+            ),
     );
   }
 
@@ -648,10 +614,7 @@ class _QuizScreenState extends State<QuizScreen> {
               const SizedBox(height: 18),
               const Text(
                 'Materi Sudah Dihapus',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
@@ -659,9 +622,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     ? 'Materi ini sudah tidak tersedia.'
                     : errorMessage,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -684,7 +645,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -695,7 +656,7 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _emptyQuizState() {
     return RefreshIndicator(
       color: Colors.green,
-      onRefresh: _loadData,
+      onRefresh: _refreshQuiz,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
@@ -733,10 +694,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 const SizedBox(height: 18),
                 const Text(
                   'Kuis Belum Tersedia',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -744,13 +702,11 @@ class _QuizScreenState extends State<QuizScreen> {
                       ? 'Kuis untuk materi ini belum tersedia atau sudah dihapus admin.'
                       : errorMessage,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: _loadData,
+                  onPressed: () => _loadData(forceRefresh: true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     elevation: 0,
@@ -769,7 +725,7 @@ class _QuizScreenState extends State<QuizScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -786,9 +742,7 @@ class _QuizScreenState extends State<QuizScreen> {
       child: const Text(
         '⚠️ Kamu sudah mengerjakan kuis ini. Backend akan tetap mengecek progress dan achievement.',
         textAlign: TextAlign.center,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -810,10 +764,7 @@ class _QuizScreenState extends State<QuizScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
-              Icons.quiz_rounded,
-              color: Colors.green,
-            ),
+            child: const Icon(Icons.quiz_rounded, color: Colors.green),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -861,10 +812,7 @@ class _QuizScreenState extends State<QuizScreen> {
           const SizedBox(height: 10),
           Text(
             q['pertanyaan'] ?? '',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
           ...List.generate(4, (i) {
@@ -910,14 +858,7 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
             const SizedBox(width: 15),
-            Expanded(
-              child: Text(
-                text,
-                style: const TextStyle(
-                  fontSize: 14,
-                ),
-              ),
-            ),
+            Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
           ],
         ),
       ),
@@ -951,9 +892,7 @@ class _QuizScreenState extends State<QuizScreen> {
           ),
           onPressed: isSubmitting ? null : _submitQuiz,
           child: isSubmitting
-              ? const CircularProgressIndicator(
-                  color: Colors.white,
-                )
+              ? const CircularProgressIndicator(color: Colors.white)
               : Text(
                   hasFinished ? 'Cek Ulang Progress Quiz' : 'Kumpulkan Jawaban',
                   style: const TextStyle(
@@ -1042,7 +981,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-            )
+            ),
           ],
         );
       },
@@ -1079,8 +1018,8 @@ class _QuizScreenState extends State<QuizScreen> {
           Text(
             isSuccess
                 ? alreadyCompleted
-                    ? 'Quiz ini sudah pernah diselesaikan. XP tidak bertambah.'
-                    : 'Kamu lulus! XP: +$xpAdded'
+                      ? 'Quiz ini sudah pernah diselesaikan. XP tidak bertambah.'
+                      : 'Kamu lulus! XP: +$xpAdded'
                 : 'Kamu belum lulus.',
             style: TextStyle(
               color: isSuccess ? Colors.green : Colors.red,
@@ -1103,9 +1042,7 @@ class _QuizScreenState extends State<QuizScreen> {
       decoration: BoxDecoration(
         color: Colors.red.withOpacity(0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.red.withOpacity(0.15),
-        ),
+        border: Border.all(color: Colors.red.withOpacity(0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1172,11 +1109,8 @@ class _QuizScreenState extends State<QuizScreen> {
   void _showSnackBar(String message, Color color) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: color,
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 }
