@@ -1,4 +1,4 @@
-// lib/screens/edit_profile_screen.dart
+// lib/screens/user/edit_profile_screen.dart
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -25,7 +25,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final ImagePicker _picker = ImagePicker();
 
   bool _isLoading = false;
-  final Color greenTheme = const Color(0xFF4CAF50);
+  final Color greenTheme = Colors.green;
 
   @override
   void initState() {
@@ -50,7 +50,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // --- MENGGUNAKAN API_SERVICE BAWAAN ANDA ---
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -59,7 +58,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       final userId = widget.userData['id'] ?? widget.userData['_id'];
 
-      // Memanggil fungsi updateProfile dari api_service.dart Anda
       final response = await ApiService.updateProfile(
         userId,
         _nameController.text,
@@ -88,13 +86,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // --- MENGGUNAKAN API_SERVICE BAWAAN ANDA ---
   Future<void> _deleteAccount(String password) async {
     setState(() => _isLoading = true);
     try {
       final userId = widget.userData['id'] ?? widget.userData['_id'];
 
-      // Memanggil fungsi deleteAccount dari api_service.dart Anda (Wajib kirim password)
       final response = await ApiService.deleteAccount(userId, password);
 
       if (response['success'] == true) {
@@ -122,14 +118,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // --- DIALOG KONFIRMASI HAPUS (DITAMBAH INPUT PASSWORD) ---
   void _showDeleteConfirmation() {
     final TextEditingController passwordController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.red),
@@ -147,7 +142,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Masukkan Password Anda',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
               ),
             ),
@@ -159,7 +154,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: const Text('Batal', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
+            ),
             onPressed: () {
               if (passwordController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -182,122 +180,185 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String? currentProfilePic = widget.userData['avatar_url'] ?? widget.userData['profilePicture'];
 
     return Scaffold(
-      backgroundColor: Colors.white, 
+      backgroundColor: Colors.transparent, 
+      extendBodyBehindAppBar: true, 
       appBar: AppBar(
-        title: const Text('Edit Profil', style: TextStyle(color: Colors.white, fontSize: 18)),
-        backgroundColor: greenTheme,
+        backgroundColor: Colors.transparent, 
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 22),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Edit Profil', 
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18)
+        ),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: greenTheme))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    Center(
-                      child: Stack(
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
+            // Background Image SAMA PERSIS dengan profile_screen.dart
+            SizedBox.expand(
+              child: Image.asset(
+                'assets/coding_bg.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+              ),
+            ),
+            
+            // Konten Utama di dalam SafeArea agar tidak menabrak header
+            SafeArea(
+              child: _isLoading
+                ? Center(child: CircularProgressIndicator(color: greenTheme))
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
                         children: [
-                          CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.green.withOpacity(0.2),
-                            backgroundImage: _imageFile != null
-                                ? FileImage(_imageFile!) as ImageProvider
-                                : (currentProfilePic != null && currentProfilePic.isNotEmpty
-                                    ? NetworkImage(currentProfilePic) as ImageProvider
-                                    : null),
-                            child: (_imageFile == null && (currentProfilePic == null || currentProfilePic.isEmpty))
-                                ? Icon(Icons.person, size: 50, color: greenTheme)
-                                : null,
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: _pickImage,
-                              child: Container(
-                                height: 32,
-                                width: 32,
-                                decoration: BoxDecoration(
-                                  color: greenTheme,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
+                          Center(
+                            child: Stack(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))],
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 55,
+                                    backgroundColor: Colors.green[100], 
+                                    backgroundImage: _imageFile != null
+                                        ? FileImage(_imageFile!) as ImageProvider
+                                        : (currentProfilePic != null && currentProfilePic.isNotEmpty
+                                            ? NetworkImage(currentProfilePic) as ImageProvider
+                                            : null),
+                                    child: (_imageFile == null && (currentProfilePic == null || currentProfilePic.isEmpty))
+                                        ? Icon(Icons.person, size: 55, color: greenTheme)
+                                        : null,
+                                  ),
                                 ),
-                                child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                                Positioned(
+                                  bottom: 0,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: _pickImage,
+                                    child: Container(
+                                      height: 36,
+                                      width: 36,
+                                      decoration: BoxDecoration(
+                                        color: greenTheme,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.white, width: 3),
+                                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 5)],
+                                      ),
+                                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 40),
+
+                          // Input Nama Modern
+                          _buildModernTextField(
+                            controller: _nameController,
+                            hint: 'Nama Lengkap',
+                            icon: Icons.person_outline,
+                            validator: (value) => value == null || value.isEmpty ? 'Nama tidak boleh kosong' : null,
+                          ),
+                          
+                          const SizedBox(height: 20),
+
+                          // Input Bio Modern
+                          _buildModernTextField(
+                            controller: _bioController,
+                            hint: 'Bio singkat (hobi, status, dll)',
+                            icon: Icons.info_outline,
+                            maxLines: 3,
+                          ),
+                          
+                          const SizedBox(height: 40),
+
+                          // Tombol Simpan Modern
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: greenTheme, 
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), 
+                                elevation: 3,
+                                shadowColor: Colors.green.withOpacity(0.5),
+                              ),
+                              child: const Text(
+                                'Simpan Perubahan',
+                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 25),
+
+                          // Tombol Hapus Akun (Background disesuaikan agar terbaca di atas gambar)
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: TextButton.icon(
+                              onPressed: _isLoading ? null : _showDeleteConfirmation,
+                              icon: const Icon(Icons.delete_forever, color: Colors.red, size: 20),
+                              label: const Text(
+                                'Hapus Akun Permanen', 
+                                style: TextStyle(color: Colors.red, fontSize: 14, fontWeight: FontWeight.bold)
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 40),
-
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Nama Lengkap',
-                        prefixIcon: const Icon(Icons.person), 
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10), 
-                          borderSide: BorderSide(color: greenTheme, width: 2)
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                      ),
-                      validator: (value) => value == null || value.isEmpty ? 'Nama tidak boleh kosong' : null,
-                    ),
-                    const SizedBox(height: 20),
-
-                    TextFormField(
-                      controller: _bioController,
-                      maxLines: 3, 
-                      decoration: InputDecoration(
-                        labelText: 'Bio singkat',
-                        alignLabelWithHint: true, 
-                        prefixIcon: const Padding(
-                          padding: EdgeInsets.only(bottom: 45), 
-                          child: Icon(Icons.info),
-                        ),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10), 
-                          borderSide: BorderSide(color: greenTheme, width: 2)
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 35),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _saveProfile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: greenTheme, 
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: const Text(
-                          'Simpan Perubahan',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    TextButton(
-                      onPressed: _isLoading ? null : _showDeleteConfirmation,
-                      child: const Text(
-                        'Hapus Akun Permanen', 
-                        style: TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.bold)
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget bantuan untuk membuat TextField bergaya modern
+  Widget _buildModernTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95), // Dibuat sedikit opacity agar elegan
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        maxLines: maxLines,
+        validator: validator,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+          prefixIcon: Padding(
+            padding: EdgeInsets.only(bottom: maxLines > 1 ? 45 : 0),
+            child: Icon(icon, color: Colors.grey[600]),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        ),
+      ),
     );
   }
 }
