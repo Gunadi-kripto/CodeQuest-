@@ -1,3 +1,6 @@
 Backend/node_modules/
 Backend/.env
 node_modules/
+
+*.jks
+frontend/android/app/upload-keystore.jks

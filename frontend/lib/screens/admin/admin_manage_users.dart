@@ -554,118 +554,95 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, 
-      body: Stack(
-        children: [
-          SizedBox.expand(
-            child: Image.asset(
-              'assets/coding_bg.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-            ),
-          ),
-          isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.green),
-                )
-              : SafeArea(
-                  child: RefreshIndicator(
-                    onRefresh: _loadAllData,
-                    color: Colors.green,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Users',
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const Text(
-                            'Kelola semua pengguna aplikasi',
-                            style: TextStyle(
-                                color: Colors.black54, fontSize: 14),
-                          ),
-                          const SizedBox(height: 25),
-                          GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1.4,
-                            children: [
-                              _buildSummaryCard(
-                                'Total Users',
-                                isStatsLoading
-                                    ? '...'
-                                    : formatNumber(totalUsers),
-                                Icons.people_outline,
-                                Colors.green,
-                              ),
-                              _buildSummaryCard(
-                                'Total XP',
-                                isStatsLoading
-                                    ? '...'
-                                    : formatNumber(totalXP),
-                                Icons.stars_outlined,
-                                Colors.purple,
-                              ),
-                              _buildSummaryCard(
-                                'Kuis Dikerjakan',
-                                isStatsLoading
-                                    ? '...'
-                                    : formatNumber(totalQuiz),
-                                Icons.quiz_outlined,
-                                Colors.orange,
-                              ),
-                              _buildSummaryCard(
-                                'Materi Selesai',
-                                isStatsLoading
-                                    ? '...'
-                                    : formatNumber(totalMateri),
-                                Icons.menu_book_outlined,
-                                Colors.blue,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 25),
-                          _buildSearchBar(),
-                          const SizedBox(height: 20),
-                          if (filteredUsers.isEmpty)
-                            _buildEmptySearch()
-                          else
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: filteredUsers.length,
-                              itemBuilder: (context, index) {
-                                return _buildUserCard(
-                                  Map<String, dynamic>.from(
-                                      filteredUsers[index]),
-                                );
-                              },
-                            ),
-                          const SizedBox(height: 50),
-                        ],
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: Colors.green),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadAllData,
+              color: Colors.green,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Users',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                     ),
-                  ),
+                    const Text(
+                      'Kelola semua pengguna aplikasi',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                    const SizedBox(height: 25),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.4,
+                      children: [
+                        _buildSummaryCard(
+                          'Total Users',
+                          isStatsLoading ? '...' : formatNumber(totalUsers),
+                          Icons.people_outline,
+                          Colors.green,
+                        ),
+                        _buildSummaryCard(
+                          'Total XP',
+                          isStatsLoading ? '...' : formatNumber(totalXP),
+                          Icons.stars_outlined,
+                          Colors.purple,
+                        ),
+                        _buildSummaryCard(
+                          'Kuis Dikerjakan',
+                          isStatsLoading ? '...' : formatNumber(totalQuiz),
+                          Icons.quiz_outlined,
+                          Colors.orange,
+                        ),
+                        _buildSummaryCard(
+                          'Materi Selesai',
+                          isStatsLoading ? '...' : formatNumber(totalMateri),
+                          Icons.menu_book_outlined,
+                          Colors.blue,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 25),
+                    _buildSearchBar(),
+                    const SizedBox(height: 20),
+                    if (filteredUsers.isEmpty)
+                      _buildEmptySearch()
+                    else
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: filteredUsers.length,
+                        itemBuilder: (context, index) {
+                          return _buildUserCard(
+                            Map<String, dynamic>.from(filteredUsers[index]),
+                          );
+                        },
+                      ),
+                    const SizedBox(height: 50),
+                  ],
                 ),
-        ],
-      ),
+              ),
+            ),
     );
   }
 
   Widget _buildSearchBar() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -689,7 +666,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
                   icon: const Icon(Icons.close, color: Colors.grey),
                 ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );
@@ -728,7 +705,7 @@ class _AdminManageUsersState extends State<AdminManageUsers> {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
