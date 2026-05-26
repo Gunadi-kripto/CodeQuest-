@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 import '../auth/login_screen.dart';
 import 'admin_manage_users.dart';
-import 'admin_language_screen.dart'; // Ini tetap ada jika kamu butuh halaman tambah bahasa
+import 'admin_language_screen.dart';
 import 'admin_manage_kuis.dart';
 import 'admin_manage_achievements.dart';
 import 'admin_manage_materi.dart';
@@ -15,7 +15,7 @@ class AdminMainScreen extends StatefulWidget {
 }
 
 class _AdminMainScreenState extends State<AdminMainScreen> {
-  int _selectedIndex = 1; // Default ke tab Materi (Grid Bahasa)
+  int _selectedIndex = 1;
   List<dynamic> languages = [];
   bool isLoadingLang = true;
 
@@ -46,9 +46,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
           "Hapus Bahasa?",
           style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
         ),
-        content: Text(
-          "Yakin ingin menghapus bahasa '$nama'? Ini akan membersihkan ikon yang nyangkut di dashboard.",
-        ),
+        content: Text("Yakin ingin menghapus bahasa '$nama'? Ini akan membersihkan ikon yang nyangkut di dashboard."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -80,8 +78,7 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     setState(() {
       _selectedIndex = index;
     });
-    if (index == 1)
-      _loadLanguages(); // Refresh data bahasa saat masuk tab materi
+    if (index == 1) _loadLanguages();
   }
 
   void _logout() async {
@@ -95,109 +92,140 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
     }
   }
 
-  // Widget khusus untuk menampilkan Grid Bahasa di Tab Materi
   Widget _buildLanguageGrid() {
-    if (isLoadingLang)
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.green),
-      );
-    if (languages.isEmpty)
-      return const Center(child: Text("Belum ada bahasa."));
+    if (isLoadingLang) {
+      return const Center(child: CircularProgressIndicator(color: Colors.green));
+    }
 
-    return RefreshIndicator(
-      onRefresh: _loadLanguages,
-      child: GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 0.9,
+    return Stack(
+      children: [
+        // Background Gambar
+        SizedBox.expand(
+          child: Image.asset(
+            'assets/coding_bg.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+          ),
         ),
-        itemCount: languages.length,
-        itemBuilder: (context, index) {
-          final lang = languages[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AdminManageMateri(
-                    languageId: lang['_id'],
-                    languageName: lang['nama_bahasa'],
-                  ),
-                ),
-              ).then((_) => _loadLanguages());
-            },
-            onLongPress: () =>
-                _confirmDeleteLanguage(lang['_id'], lang['nama_bahasa']),
-            child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+        if (languages.isEmpty)
+          const Center(child: Text("Belum ada bahasa.", style: TextStyle(color: Colors.white)))
+        else
+          RefreshIndicator(
+            onRefresh: _loadLanguages,
+            color: Colors.green,
+            child: GridView.builder(
+              padding: const EdgeInsets.all(20),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 0.9,
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (lang['icon_url'] != null)
-                    Image.network(
-                      lang['icon_url'],
-                      height: 50,
-                      width: 50,
-                      errorBuilder: (c, e, s) =>
-                          const Icon(Icons.code, size: 40),
-                    )
-                  else
-                    const Icon(Icons.language, size: 40, color: Colors.green),
-                  const SizedBox(height: 10),
-                  Text(
-                    lang['nama_bahasa'] ?? '',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+              itemCount: languages.length,
+              itemBuilder: (context, index) {
+                final lang = languages[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AdminManageMateri(
+                          languageId: lang['_id'],
+                          languageName: lang['nama_bahasa'],
+                        ),
+                      ),
+                    ).then((_) => _loadLanguages());
+                  },
+                  onLongPress: () => _confirmDeleteLanguage(lang['_id'], lang['nama_bahasa']),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.92), // Glassmorphism style
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (lang['icon_url'] != null)
+                          Image.network(
+                            lang['icon_url'],
+                            height: 50,
+                            width: 50,
+                            errorBuilder: (c, e, s) => const Icon(Icons.code, size: 40),
+                          )
+                        else
+                          const Icon(Icons.language, size: 40, color: Colors.green),
+                        const SizedBox(height: 12),
+                        Text(
+                          lang['nama_bahasa'] ?? '',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          "Tahan untuk hapus",
+                          style: TextStyle(fontSize: 10, color: Colors.grey),
+                        ),
+                      ],
+                    ),
                   ),
-                  const Text(
-                    "Tahan untuk hapus",
-                    style: TextStyle(fontSize: 9, color: Colors.grey),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
-          );
-        },
-      ),
+          ),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // List layar berdasarkan index
     final List<Widget> widgetOptions = [
       const AdminManageUsers(),
-      _buildLanguageGrid(), // Ganti halaman AdminLanguageScreen lama dengan Grid ini
+      _buildLanguageGrid(),
       const AdminManageKuis(),
       const AdminManageAchievements(),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'System Admin',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            const Text(
+              'System Admin',
+              style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'ADMIN MODE',
+                style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
         ),
-        backgroundColor: Colors.green,
         actions: [
-          if (_selectedIndex ==
-              1) // Tombol tambah bahasa hanya muncul di tab materi
+          if (_selectedIndex == 1)
             IconButton(
-              icon: const Icon(Icons.add_circle, color: Colors.white),
+              icon: const Icon(Icons.add_circle, color: Colors.green),
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const AdminLanguageScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const AdminLanguageScreen()),
               ).then((_) => _loadLanguages()),
             ),
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
             onPressed: _logout,
             tooltip: 'Logout',
           ),
@@ -209,16 +237,14 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
           BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Materi'),
           BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'Kuis'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.emoji_events),
-            label: 'Piala',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.emoji_events), label: 'Piala'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
       ),
     );
   }

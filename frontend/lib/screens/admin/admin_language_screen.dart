@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../services/api_service.dart';
-import 'admin_manage_materi.dart'; 
+import 'admin_manage_materi.dart';
 
 class AdminLanguageScreen extends StatefulWidget {
   const AdminLanguageScreen({super.key});
@@ -71,8 +71,8 @@ class _AdminLanguageScreenState extends State<AdminLanguageScreen> {
                   const Text('Tambah Bahasa Baru', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
                   TextField(
-                    controller: nameController, 
-                    decoration: const InputDecoration(labelText: 'Nama Bahasa', border: OutlineInputBorder())
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Nama Bahasa', border: OutlineInputBorder())
                   ),
                   const SizedBox(height: 16),
                   const Align(alignment: Alignment.centerLeft, child: Text('Pilih Warna Tema:')),
@@ -97,9 +97,9 @@ class _AdminLanguageScreenState extends State<AdminLanguageScreen> {
                     child: Container(
                       height: 80, width: 80,
                       decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(15)),
-                      child: selectedIcon != null 
-                        ? ClipRRect(borderRadius: BorderRadius.circular(15), child: Image.file(selectedIcon!, fit: BoxFit.cover)) 
-                        : const Icon(Icons.add_a_photo, color: Colors.grey),
+                      child: selectedIcon != null
+                          ? ClipRRect(borderRadius: BorderRadius.circular(15), child: Image.file(selectedIcon!, fit: BoxFit.cover))
+                          : const Icon(Icons.add_a_photo, color: Colors.grey),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -108,32 +108,26 @@ class _AdminLanguageScreenState extends State<AdminLanguageScreen> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.symmetric(vertical: 14)),
                       onPressed: isSaving ? null : () async {
-                        debugPrint("🛠️ LOG: Tombol Simpan ditekan");
-
                         if (nameController.text.isEmpty || selectedIcon == null) {
                           _showAlertDialog('Peringatan', 'Nama bahasa dan icon wajib diisi!');
                           return;
                         }
 
                         setSheetState(() => isSaving = true);
-                        debugPrint("🛠️ LOG: Mengirim ke API: ${nameController.text}");
-                        
                         final res = await ApiService.addLanguage(nameController.text, selectedColor, selectedIcon!);
-                        
-                        debugPrint("🛠️ LOG: Respon API diterima: $res");
                         setSheetState(() => isSaving = false);
 
                         if (res['success'] == true) {
-                          Navigator.pop(context); // Tutup BottomSheet
+                          Navigator.pop(context); 
                           _showAlertDialog('Sukses', 'Bahasa berhasil ditambahkan!', isError: false);
-                          _loadLanguages(); 
+                          _loadLanguages();
                         } else {
                           _showAlertDialog('Gagal', res['message'] ?? 'Terjadi kesalahan');
                         }
                       },
-                      child: isSaving 
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                        : const Text('Simpan', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      child: isSaving
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Simpan', style: TextStyle(color: Colors.white, fontSize: 16)),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -160,15 +154,31 @@ class _AdminLanguageScreenState extends State<AdminLanguageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      extendBodyBehindAppBar: true, 
       appBar: AppBar(
-        title: const Text('System add Quiz', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white, elevation: 0,
-        automaticallyImplyLeading: false,
+        title: const Text('System add Quiz', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        // Paksa tombol back panah menjadi hitam
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.green))
-          : GridView.builder(
+      body: Stack(
+        children: [
+          // Background Universal
+          SizedBox.expand(
+            child: Image.asset(
+              'assets/coding_bg.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+            ),
+          ),
+          SafeArea(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator(color: Colors.green))
+                : GridView.builder(
               padding: const EdgeInsets.all(20),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 0.85,
@@ -180,6 +190,9 @@ class _AdminLanguageScreenState extends State<AdminLanguageScreen> {
                 return _buildLanguageCard(lang);
               },
             ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -188,9 +201,9 @@ class _AdminLanguageScreenState extends State<AdminLanguageScreen> {
       onTap: _showAddLanguageForm,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white, 
-          borderRadius: BorderRadius.circular(20), 
-          border: Border.all(color: Colors.grey[300]!, width: 2)
+            color: Colors.white.withOpacity(0.92), // Glassmorphism
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.grey[300]!, width: 2)
         ),
         child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(Icons.add_circle_outline, size: 40, color: Colors.grey),
@@ -217,7 +230,7 @@ class _AdminLanguageScreenState extends State<AdminLanguageScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white, 
+          color: Colors.white.withOpacity(0.92), // Glassmorphism
           borderRadius: BorderRadius.circular(20),
           border: Border(bottom: BorderSide(color: themeColor, width: 4)),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5)],
@@ -226,13 +239,13 @@ class _AdminLanguageScreenState extends State<AdminLanguageScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             CachedNetworkImage(
-              imageUrl: lang['icon_url'], 
-              height: 50, 
+              imageUrl: lang['icon_url'],
+              height: 50,
               placeholder: (context, url) => const CircularProgressIndicator(color: Colors.green),
               errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 40, color: Colors.grey),
             ),
             const SizedBox(height: 10),
-            Text(lang['nama_bahasa'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(lang['nama_bahasa'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
           ],
         ),
       ),

@@ -199,65 +199,81 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      body: RefreshIndicator(
-        onRefresh: _refreshAll,
-        color: Colors.green,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          // 1. Gambar Background (Lapisan putih dicabut biar gambar 100% jelas)
+          SizedBox.expand(
+            child: Image.asset(
+              'assets/coding_bg.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+            ),
+          ),
+          
+          // 2. Konten Utama
+          SafeArea(
+            child: RefreshIndicator(
+              onRefresh: _refreshAll,
+              color: Colors.green,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(),
 
-              const SizedBox(height: 22),
+                    const SizedBox(height: 22),
 
-              _buildSelectorCard(),
+                    _buildSelectorCard(),
 
-              const SizedBox(height: 22),
+                    const SizedBox(height: 22),
 
-              _buildQuizListHeader(),
+                    _buildQuizListHeader(),
 
-              const SizedBox(height: 14),
+                    const SizedBox(height: 14),
 
-              _buildQuizContent(),
+                    _buildQuizContent(),
 
-              const SizedBox(height: 18),
+                    const SizedBox(height: 18),
 
-              SizedBox(
-                width: double.infinity,
-                height: 58,
-                child: ElevatedButton.icon(
-                  onPressed:
-                      selectedModule == null ? null : () => _showQuizForm(),
-                  icon: const Icon(
-                    Icons.add,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
-                    'Tambah Kuis',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                    SizedBox(
+                      width: double.infinity,
+                      height: 58,
+                      child: ElevatedButton.icon(
+                        onPressed:
+                            selectedModule == null ? null : () => _showQuizForm(),
+                        icon: const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          'Tambah Kuis',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          disabledBackgroundColor: Colors.grey.shade300,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    disabledBackgroundColor: Colors.grey.shade300,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
+
+                    const SizedBox(height: 110),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 110),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -316,7 +332,7 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.92), // Disamakan transparan 0.92
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
           color: Colors.grey.shade200,
@@ -546,7 +562,7 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.92), // Disamakan transparan 0.92
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -777,7 +793,7 @@ class _AdminManageKuisState extends State<AdminManageKuis> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.92), // Disamakan transparan 0.92
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.grey.shade200,
