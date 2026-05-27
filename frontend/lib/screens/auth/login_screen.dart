@@ -22,6 +22,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final Color primaryGreen = const Color(0xFF1F9E58);
   final Color lightGray = const Color(0xFFF0F2F5);
 
+  // Inisialisasi GoogleSignIn yang dikonfigurasi untuk Web dan Android
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: '946414111075-tb595grrhu28td3ss6a7o3p925jcpvt7.apps.googleusercontent.com',
+    serverClientId: '946414111075-tb595grrhu28td3ss6a7o3p925jcpvt7.apps.googleusercontent.com',
+    scopes: ['email', 'profile'],
+  );
+
   // === FUNGSI POPUP RESET PASSWORD (LOGIKA TETAP, DESAIN LIGHT MODE) ===
   void _showResetPasswordDialog() {
     final TextEditingController emailController = TextEditingController();
@@ -141,12 +148,11 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // === LOGIKA GOOGLE SIGN IN (TETAP SAMA) ===
+  // === LOGIKA GOOGLE SIGN IN (TEMBAK SAMA DENGAN INSTANCE KELAS) ===
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(serverClientId: '946414111075-tb595grrhu28td3ss6a7o3p925jcpvt7.apps.googleusercontent.com');
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         setState(() => _isLoading = false);
         return;
