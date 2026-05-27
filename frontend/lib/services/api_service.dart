@@ -7,10 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static const String baseUrl = 'https://code-quest-eta-wine.vercel.app/api';
-  
-  static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '946414111075-6rtarlcs10qgt4h682c9f0jtg8ta65l2.apps.googleusercontent.com',
-  );
+
   // ==========================================
   // 1. FUNGSI BAHASA (LANGUAGE)
   // ==========================================
@@ -398,7 +395,7 @@ class ApiService {
     await prefs.remove('user_data');
 
     try {
-      await _googleSignIn.signOut();
+      await GoogleSignIn().signOut();
     } catch (e) {}
   }
 
