@@ -18,18 +18,16 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscureText = true;
 
-  // Warna utama yang diambil dari desain gambar
   final Color primaryGreen = const Color(0xFF1F9E58);
   final Color lightGray = const Color(0xFFF0F2F5);
 
-  // Inisialisasi GoogleSignIn yang dikonfigurasi untuk Web dan Android
+  // Inisialisasi Google SignIn yang aman untuk Android dan Web
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: '946414111075-tb595grrhu28td3ss6a7o3p925jcpvt7.apps.googleusercontent.com',
     serverClientId: '946414111075-tb595grrhu28td3ss6a7o3p925jcpvt7.apps.googleusercontent.com',
     scopes: ['email', 'profile'],
   );
 
-  // === FUNGSI POPUP RESET PASSWORD (LOGIKA TETAP, DESAIN LIGHT MODE) ===
   void _showResetPasswordDialog() {
     final TextEditingController emailController = TextEditingController();
     final TextEditingController otpController = TextEditingController();
@@ -125,7 +123,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // === LOGIKA LOGIN (TETAP SAMA) ===
   void _login() async {
     setState(() => _isLoading = true);
     final response = await ApiService.loginUser(_emailController.text, _passwordController.text);
@@ -148,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // === LOGIKA GOOGLE SIGN IN (TEMBAK SAMA DENGAN INSTANCE KELAS) ===
+  // === FUNGSI GOOGLE SIGN IN CROSS-PLATFORM ===
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
     try {
@@ -164,35 +161,41 @@ class _LoginScreenState extends State<LoginScreen> {
       if (idToken != null) {
         final response = await ApiService.loginWithGoogle(idToken);
         setState(() => _isLoading = false);
+
         if (response['token'] != null) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('Selamat datang, ${response['user']['nama_lengkap']}!'), backgroundColor: primaryGreen));
+              content: Text('Selamat datang, ${response['user']['nama_lengkap']}!'),
+              backgroundColor: primaryGreen));
+
           if (response['user']['role'] == 'admin') {
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const AdminMainScreen()));
           } else {
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainScreen()));
           }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response['message'] ?? 'Gagal otentikasi di server'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(response['message'] ?? 'Gagal otentikasi di server'),
+              backgroundColor: Colors.red));
         }
       } else {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mendapatkan token Google'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Gagal mendapatkan token Google'), backgroundColor: Colors.red));
       }
     } catch (error) {
       setState(() => _isLoading = false);
       print('Error Google Sign-In: $error');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $error'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Terjadi kesalahan: $error'), backgroundColor: Colors.red));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA), // Warna dasar putih agak keabu-abuan
+      backgroundColor: const Color(0xFFFAFAFA),
       body: Stack(
         children: [
-          // Latar Belakang Lingkaran Hijau Transparan (Persis seperti gambar)
           Positioned(
             top: -40,
             right: -60,
@@ -203,7 +206,6 @@ class _LoginScreenState extends State<LoginScreen> {
             left: -50,
             child: CircleAvatar(radius: 80, backgroundColor: primaryGreen.withOpacity(0.06)),
           ),
-          
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -212,8 +214,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 20),
-                    
-                    // ================= LOGO =================
                     Container(
                       height: 90,
                       width: 90,
@@ -232,8 +232,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 15),
-
-                    // ================= NAMA APLIKASI =================
                     Text.rich(
                       TextSpan(
                         text: 'Code',
@@ -247,23 +245,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-
-                    // ================= JUDUL =================
                     const Text(
                       'Welcome Back',
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
                     ),
                     const SizedBox(height: 35),
-
-                    // ================= INPUT EMAIL =================
                     _buildPillTextField(
                       controller: _emailController,
                       hint: 'Email',
                       icon: Icons.email_outlined,
                     ),
                     const SizedBox(height: 16),
-
-                    // ================= INPUT PASSWORD =================
                     _buildPillTextField(
                       controller: _passwordController,
                       hint: 'Password',
@@ -271,8 +263,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       isPassword: true,
                     ),
                     const SizedBox(height: 30),
-
-                    // ================= TOMBOL MASUK =================
                     SizedBox(
                       width: double.infinity,
                       height: 55,
@@ -290,8 +280,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-
-                    // ================= LUPA PASSWORD =================
                     TextButton(
                       onPressed: _showResetPasswordDialog,
                       child: Text(
@@ -300,8 +288,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    // ================= TOMBOL GOOGLE =================
                     SizedBox(
                       width: double.infinity,
                       height: 55,
@@ -322,8 +308,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 40),
-
-                    // ================= DAFTAR SEKARANG =================
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -353,7 +337,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // WIDGET HELPER: TEXT FIELD BENTUK PIL (Sesuai Desain)
   Widget _buildPillTextField({
     required TextEditingController controller,
     required String hint,
@@ -391,7 +374,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // WIDGET HELPER: DIALOG TEXT FIELD
   Widget _buildDialogTextField({
     required TextEditingController controller,
     required String hint,
