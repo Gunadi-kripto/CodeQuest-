@@ -1,7 +1,10 @@
+// lib/screens/auth/login_screen.dart
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../services/api_service.dart';
 import '../../main.dart';
+import '../../utils/google_button_helper.dart';
 import 'register_screen.dart';
 import '../admin/admin_main_screen.dart';
 
@@ -21,18 +24,119 @@ class _LoginScreenState extends State<LoginScreen> {
   final Color primaryGreen = const Color(0xFF1F9E58);
   final Color lightGray = const Color(0xFFF0F2F5);
 
-  // Inisialisasi Google SignIn yang aman untuk Android dan Web
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: '946414111075-tb595grrhu28td3ss6a7o3p925jcpvt7.apps.googleusercontent.com',
-    serverClientId: '946414111075-tb595grrhu28td3ss6a7o3p925jcpvt7.apps.googleusercontent.com',
-    scopes: ['email', 'profile'],
-  );
+  // Hanya dipakai di mobile
+  GoogleSignIn? _mobileGoogleSignIn;
+
+@override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) {
+      _mobileGoogleSignIn = GoogleSignIn(
+        // WAJIB TAMBAHKAN BARIS INI UNTUK ANDROID
+        serverClientId: '946414111075-tb595grrhu28td3ss6a7o3p925jcpvt7.apps.googleusercontent.com',
+        scopes: ['email', 'profile'],
+      );
+    }
+  }
+
+  // =============================================
+  // Proses idToken ke backend (web & mobile)
+  // =============================================
+  Future<void> _processGoogleIdToken(String idToken) async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await ApiService.loginWithGoogle(idToken);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response['token'] != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Selamat datang, ${response['user']['nama_lengkap']}!'),
+            backgroundColor: primaryGreen));
+        if (response['user']['role'] == 'admin') {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminMainScreen()));
+        } else {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(response['message'] ?? 'Gagal otentikasi di server'),
+            backgroundColor: Colors.red));
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Terjadi kesalahan: $error'), backgroundColor: Colors.red));
+    }
+  }
+
+  // =============================================
+  // MOBILE: pakai signIn() seperti semula
+  // =============================================
+  Future<void> _handleGoogleSignInMobile() async {
+    setState(() => _isLoading = true);
+    try {
+      final GoogleSignInAccount? googleUser = await _mobileGoogleSignIn!.signIn();
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+      if (idToken != null) {
+        await _processGoogleIdToken(idToken);
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Gagal mendapatkan token Google'),
+            backgroundColor: Colors.red));
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Terjadi kesalahan: $error'), backgroundColor: Colors.red));
+    }
+  }
+
+  // =============================================
+  // Tombol Google — beda per platform
+  // =============================================
+  Widget _buildGoogleButton() {
+    if (kIsWeb) {
+      return SizedBox(
+        width: double.infinity,
+        height: 55,
+        child: buildGoogleWebButton(
+          onSuccess: (String idToken) => _processGoogleIdToken(idToken),
+        ),
+      );
+    }
+    // MOBILE: tombol custom seperti semula
+    return SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: ElevatedButton.icon(
+        onPressed: _isLoading ? null : _handleGoogleSignInMobile,
+        icon: const Icon(Icons.g_mobiledata, size: 32, color: Colors.red),
+        label: const Text('Login with Google',
+            style: TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w600)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.grey.shade200,
+          elevation: 2,
+          shadowColor: Colors.black12,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        ),
+      ),
+    );
+  }
 
   void _showResetPasswordDialog() {
     final TextEditingController emailController = TextEditingController();
     final TextEditingController otpController = TextEditingController();
     final TextEditingController newPasswordController = TextEditingController();
-
     bool isProcessing = false;
     bool isOtpSent = false;
 
@@ -61,9 +165,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (!isOtpSent) ...[
                   _buildDialogTextField(controller: emailController, hint: 'Email', icon: Icons.email),
                 ] else ...[
-                  _buildDialogTextField(controller: otpController, hint: 'Kode OTP 6 Digit', icon: Icons.numbers, isNumber: true, maxLength: 6),
+                  _buildDialogTextField(
+                      controller: otpController, hint: 'Kode OTP 6 Digit',
+                      icon: Icons.numbers, isNumber: true, maxLength: 6),
                   const SizedBox(height: 12),
-                  _buildDialogTextField(controller: newPasswordController, hint: 'Password Baru', icon: Icons.lock_reset, isPassword: true),
+                  _buildDialogTextField(
+                      controller: newPasswordController, hint: 'Password Baru',
+                      icon: Icons.lock_reset, isPassword: true),
                 ]
               ],
             ),
@@ -81,7 +189,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ? null
                     : () async {
                         setDialogState(() => isProcessing = true);
-
                         if (!isOtpSent) {
                           if (emailController.text.isEmpty) {
                             setDialogState(() => isProcessing = false);
@@ -109,12 +216,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (res['statusCode'] == 200) nav.pop();
                           }
                         }
-
                         setDialogState(() => isProcessing = false);
                       },
                 child: isProcessing
-                    ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Text(isOtpSent ? 'Simpan' : 'Kirim OTP', style: const TextStyle(color: Colors.white)),
+                    ? const SizedBox(height: 16, width: 16,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(isOtpSent ? 'Simpan' : 'Kirim OTP',
+                        style: const TextStyle(color: Colors.white)),
               )
             ],
           );
@@ -130,63 +238,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (response['statusCode'] == 200 || response['token'] != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Selamat datang, ${response['user']['nama_lengkap']}!'), backgroundColor: primaryGreen));
+          content: Text('Selamat datang, ${response['user']['nama_lengkap']}!'),
+          backgroundColor: primaryGreen));
       if (response['user']['role'] == 'admin') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const AdminMainScreen()));
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminMainScreen()));
       } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainScreen()));
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
       }
     } else {
       if (response['unverified'] == true) {
         _emailController.clear();
         _passwordController.clear();
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response['message'] ?? 'Login Gagal'), backgroundColor: Colors.red));
-    }
-  }
-
-  // === FUNGSI GOOGLE SIGN IN CROSS-PLATFORM ===
-  Future<void> _handleGoogleSignIn() async {
-    setState(() => _isLoading = true);
-    try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final String? idToken = googleAuth.idToken;
-
-      if (idToken != null) {
-        final response = await ApiService.loginWithGoogle(idToken);
-        setState(() => _isLoading = false);
-
-        if (response['token'] != null) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('Selamat datang, ${response['user']['nama_lengkap']}!'),
-              backgroundColor: primaryGreen));
-
-          if (response['user']['role'] == 'admin') {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const AdminMainScreen()));
-          } else {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainScreen()));
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(response['message'] ?? 'Gagal otentikasi di server'),
-              backgroundColor: Colors.red));
-        }
-      } else {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Gagal mendapatkan token Google'), backgroundColor: Colors.red));
-      }
-    } catch (error) {
-      setState(() => _isLoading = false);
-      print('Error Google Sign-In: $error');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Terjadi kesalahan: $error'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Login Gagal'), backgroundColor: Colors.red));
     }
   }
 
@@ -220,48 +285,31 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: BoxDecoration(
                         color: primaryGreen,
                         shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(color: primaryGreen.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5))
-                        ],
+                        boxShadow: [BoxShadow(
+                            color: primaryGreen.withOpacity(0.3),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5))],
                       ),
                       child: const Center(
-                        child: Text(
-                          '</>',
-                          style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
-                        ),
+                        child: Text('</>',
+                            style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
                       ),
                     ),
                     const SizedBox(height: 15),
-                    Text.rich(
-                      TextSpan(
-                        text: 'Code',
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
-                        children: [
-                          TextSpan(
-                            text: 'Quest',
-                            style: TextStyle(color: primaryGreen),
-                          ),
-                        ],
-                      ),
-                    ),
+                    Text.rich(TextSpan(
+                      text: 'Code',
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+                      children: [TextSpan(text: 'Quest', style: TextStyle(color: primaryGreen))],
+                    )),
                     const SizedBox(height: 30),
-                    const Text(
-                      'Welcome Back',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-                    ),
+                    const Text('Welcome Back',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87)),
                     const SizedBox(height: 35),
-                    _buildPillTextField(
-                      controller: _emailController,
-                      hint: 'Email',
-                      icon: Icons.email_outlined,
-                    ),
+                    _buildPillTextField(controller: _emailController, hint: 'Email', icon: Icons.email_outlined),
                     const SizedBox(height: 16),
                     _buildPillTextField(
-                      controller: _passwordController,
-                      hint: 'Password',
-                      icon: Icons.lock_outline,
-                      isPassword: true,
-                    ),
+                        controller: _passwordController, hint: 'Password',
+                        icon: Icons.lock_outline, isPassword: true),
                     const SizedBox(height: 30),
                     SizedBox(
                       width: double.infinity,
@@ -276,53 +324,29 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: _isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Sign In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                            : const Text('Sign In',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                       ),
                     ),
                     const SizedBox(height: 10),
                     TextButton(
                       onPressed: _showResetPasswordDialog,
-                      child: Text(
-                        'Forgot Password?',
-                        style: TextStyle(color: primaryGreen, fontWeight: FontWeight.w600, fontSize: 13),
-                      ),
+                      child: Text('Forgot Password?',
+                          style: TextStyle(color: primaryGreen, fontWeight: FontWeight.w600, fontSize: 13)),
                     ),
                     const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _handleGoogleSignIn,
-                        icon: const Icon(Icons.g_mobiledata, size: 32, color: Colors.red),
-                        label: const Text(
-                          'Login with Google',
-                          style: TextStyle(fontSize: 15, color: Colors.black87, fontWeight: FontWeight.w600),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.grey.shade200,
-                          elevation: 2,
-                          shadowColor: Colors.black12,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        ),
-                      ),
-                    ),
+                    _buildGoogleButton(),
                     const SizedBox(height: 40),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          'Don\'t have an account? ',
-                          style: TextStyle(color: Colors.black54, fontSize: 13),
-                        ),
+                        const Text("Don't have an account? ",
+                            style: TextStyle(color: Colors.black54, fontSize: 13)),
                         GestureDetector(
-                          onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterScreen()));
-                          },
-                          child: Text(
-                            'Sign Up',
-                            style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold, fontSize: 13),
-                          ),
+                          onTap: () => Navigator.push(
+                              context, MaterialPageRoute(builder: (_) => RegisterScreen())),
+                          child: Text('Sign Up',
+                              style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold, fontSize: 13)),
                         ),
                       ],
                     ),
@@ -360,15 +384,14 @@ class _LoginScreenState extends State<LoginScreen> {
             ? Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: IconButton(
-                  icon: Icon(_obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: Colors.black38, size: 20),
+                  icon: Icon(
+                      _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: Colors.black38, size: 20),
                   onPressed: () => setState(() => _obscureText = !_obscureText),
                 ),
               )
             : null,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide.none,
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
         contentPadding: const EdgeInsets.symmetric(vertical: 18),
       ),
     );
@@ -394,10 +417,7 @@ class _LoginScreenState extends State<LoginScreen> {
         hintStyle: const TextStyle(fontSize: 13, color: Colors.black45),
         prefixIcon: Icon(icon, color: primaryGreen, size: 20),
         counterText: "",
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
       ),
     );
