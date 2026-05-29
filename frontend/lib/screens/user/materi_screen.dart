@@ -1,5 +1,5 @@
+// lib/screens/user/materi_screen.dart
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -137,6 +137,16 @@ class _MateriScreenState extends State<MateriScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // === RESPONSIVE LOGIC UNTUK GRID BAHASA ===
+    final double screenWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount = 2; // Default untuk Mobile
+    if (screenWidth > 1000) {
+      crossAxisCount = 6; // Desktop/Laptop: 6 bahasa berjejer
+    } else if (screenWidth > 600) {
+      crossAxisCount = 4; // Tablet: 4 bahasa berjejer
+    }
+    // ============================================
+
     return Scaffold(
       body: Stack(
         children: [
@@ -157,62 +167,70 @@ class _MateriScreenState extends State<MateriScreen> {
                     color: Colors.green,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 20),
-                          Image.asset(
-                            'assets/Software Engineer.jpg',
-                            height: 200,
-                            fit: BoxFit.contain,
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Pilih Bahasa\nPemrograman',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              height: 1.2,
-                              color: Colors.black87,
+                      // === MEMBATASI LEBAR KONTEN AGAR TETAP KE TENGAH DI DESKTOP ===
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200), // Max lebar 1200px
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              children: [
+                                const SizedBox(height: 20),
+                                Image.asset(
+                                  'assets/Software Engineer.jpg',
+                                  height: 200,
+                                  fit: BoxFit.contain,
+                                ),
+                                const SizedBox(height: 10),
+                                const Text(
+                                  'Pilih Bahasa\nPemrograman',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.2,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 25),
+                                if (languages.isEmpty)
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(24),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.92),
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    child: const Text(
+                                      'Belum ada bahasa pemrograman.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                  )
+                                else
+                                  GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: languages.length,
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount, // Gunakan variabel dinamis
+                                      crossAxisSpacing: 18,
+                                      mainAxisSpacing: 18,
+                                      childAspectRatio: 0.9,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      final lang = languages[index];
+                                      return _buildLanguageCard(lang);
+                                    },
+                                  ),
+                                const SizedBox(height: 30),
+                                _buildStreakBox(),
+                                const SizedBox(height: 30),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 25),
-                          if (languages.isEmpty)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.92),
-                                borderRadius: BorderRadius.circular(22),
-                              ),
-                              child: const Text(
-                                'Belum ada bahasa pemrograman.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            )
-                          else
-                            GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: languages.length,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 18,
-                                mainAxisSpacing: 18,
-                                childAspectRatio: 0.9,
-                              ),
-                              itemBuilder: (context, index) {
-                                final lang = languages[index];
-                                return _buildLanguageCard(lang);
-                              },
-                            ),
-                          const SizedBox(height: 30),
-                          _buildStreakBox(),
-                          const SizedBox(height: 30),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -741,96 +759,104 @@ class _StudentModuleListScreenState extends State<StudentModuleListScreen> {
               onRefresh: _loadModulesAndProgress,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 10),
-                    CachedNetworkImage(
-                      imageUrl: widget.iconUrl,
-                      height: 80,
-                      errorWidget: (context, url, error) => const Icon(
-                        Icons.code,
-                        size: 80,
-                        color: Colors.blue,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    Text(
-                      'Belajar ${widget.languageName} dari dasar hingga\nbisa membuat program sendiri!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 25),
-                    Row(
-                      children: [
-                        _buildStatCard(
-                          'Progress Kamu',
-                          '$completedCount/${modules.length} Materi',
-                          true,
-                          progress,
-                        ),
-                        const SizedBox(width: 15),
-                        _buildStatCard(
-                          'XP Didapat',
-                          '$totalXp XP',
-                          false,
-                          0,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Materi Dasar',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    if (modules.isEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Text(
-                          'Belum ada materi untuk bahasa ini.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      )
-                    else
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: modules.length,
-                        itemBuilder: (context, index) {
-                          final mod = modules[index];
+                // === MEMBATASI LEBAR LIST MATERI AGAR TETAP RAMPING DI DESKTOP ===
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 800), // Max lebar 800px
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 10),
+                          CachedNetworkImage(
+                            imageUrl: widget.iconUrl,
+                            height: 80,
+                            errorWidget: (context, url, error) => const Icon(
+                              Icons.code,
+                              size: 80,
+                              color: Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          Text(
+                            'Belajar ${widget.languageName} dari dasar hingga\nbisa membuat program sendiri!',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 25),
+                          Row(
+                            children: [
+                              _buildStatCard(
+                                'Progress Kamu',
+                                '$completedCount/${modules.length} Materi',
+                                true,
+                                progress,
+                              ),
+                              const SizedBox(width: 15),
+                              _buildStatCard(
+                                'XP Didapat',
+                                '$totalXp XP',
+                                false,
+                                0,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 30),
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Materi Dasar',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 15),
+                          if (modules.isEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: const Text(
+                                'Belum ada materi untuk bahasa ini.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          else
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: modules.length,
+                              itemBuilder: (context, index) {
+                                final mod = modules[index];
 
-                          final bool isDone = _isModuleCompleted(mod);
-                          final bool isLocked = _isModuleLocked(index);
+                                final bool isDone = _isModuleCompleted(mod);
+                                final bool isLocked = _isModuleLocked(index);
 
-                          return _buildModuleItem(
-                            index,
-                            index + 1,
-                            mod,
-                            isDone,
-                            isLocked,
-                          );
-                        },
+                                return _buildModuleItem(
+                                  index,
+                                  index + 1,
+                                  mod,
+                                  isDone,
+                                  isLocked,
+                                );
+                              },
+                            ),
+                          const SizedBox(height: 30),
+                        ],
                       ),
-                    const SizedBox(height: 30),
-                  ],
+                    ),
+                  ),
                 ),
               ),
             ),
