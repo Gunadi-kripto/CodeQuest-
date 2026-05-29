@@ -171,24 +171,13 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.friendName, 
-                  style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)
-                ),
-                Row(
-                  children: [
-                    Container(
-                      width: 6, height: 6, 
-                      decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle)
-                    ),
-                    const SizedBox(width: 4),
-                    const Text('Online', style: TextStyle(color: Colors.green, fontSize: 12)),
-                  ],
-                ),
-              ],
+            // Tulisan online dihapus agar tidak membebani database, langsung tampilkan nama
+            Expanded(
+              child: Text(
+                widget.friendName, 
+                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),

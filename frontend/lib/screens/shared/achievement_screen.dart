@@ -1,10 +1,7 @@
 // lib/screens/shared/achievement_screen.dart
-
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../services/api_service.dart';
 
 class AchievementScreen extends StatefulWidget {
@@ -268,6 +265,16 @@ class _AchievementScreenState extends State<AchievementScreen> {
         ? 0
         : unlockedCount / allAchievements.length;
 
+    // === RESPONSIVE LOGIC UNTUK GRID ACHIEVEMENT ===
+    final double screenWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount = 2; // Default untuk Mobile
+    if (screenWidth > 1200) {
+      crossAxisCount = 6; // Desktop/Laptop besar
+    } else if (screenWidth > 800) {
+      crossAxisCount = 4; // Tablet
+    }
+    // ===============================================
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F6EF),
       appBar: AppBar(
@@ -296,57 +303,63 @@ class _AchievementScreenState extends State<AchievementScreen> {
               : RefreshIndicator(
                   color: Colors.orange,
                   onRefresh: _loadData,
-                  child: CustomScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildProgressCard(progress),
-                              const SizedBox(height: 16),
-                              _buildFilterChips(),
-                              const SizedBox(height: 18),
-                              _buildSectionHeader(),
-                              const SizedBox(height: 12),
-                            ],
+                  // === MEMBATASI LEBAR KESELURUHAN AGAR RAPI DI DESKTOP ===
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      child: CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildProgressCard(progress),
+                                  const SizedBox(height: 16),
+                                  _buildFilterChips(),
+                                  const SizedBox(height: 18),
+                                  _buildSectionHeader(),
+                                  const SizedBox(height: 12),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      if (filteredAchievements.isEmpty)
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.all(18),
-                            child: _buildFilterEmptyState(),
-                          ),
-                        )
-                      else
-                        SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
-                          sliver: SliverGrid(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 14,
-                                  mainAxisSpacing: 14,
-                                  childAspectRatio: 0.64,
-                                ),
-                            delegate: SliverChildBuilderDelegate((
-                              context,
-                              index,
-                            ) {
-                              final item = filteredAchievements[index];
-                              final bool isUnlocked = _isAchievementUnlocked(
-                                item,
-                              );
+                          if (filteredAchievements.isEmpty)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.all(18),
+                                child: _buildFilterEmptyState(),
+                              ),
+                            )
+                          else
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(18, 0, 18, 28),
+                              sliver: SliverGrid(
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount, // Gunakan variabel dinamis
+                                      crossAxisSpacing: 14,
+                                      mainAxisSpacing: 14,
+                                      childAspectRatio: 0.64,
+                                    ),
+                                delegate: SliverChildBuilderDelegate((
+                                  context,
+                                  index,
+                                ) {
+                                  final item = filteredAchievements[index];
+                                  final bool isUnlocked = _isAchievementUnlocked(
+                                    item,
+                                  );
 
-                              return _buildAchievementCard(item, isUnlocked);
-                            }, childCount: filteredAchievements.length),
-                          ),
-                        ),
-                    ],
+                                  return _buildAchievementCard(item, isUnlocked);
+                                }, childCount: filteredAchievements.length),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
         ],
