@@ -29,10 +29,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // --- PERUBAHAN 1: Menambahkan 'languageName' sebagai kunci pencarian ---
   final List<Map<String, String>> _allQuests = [
-    {'title': 'Misi Harian:\nPython Loop', 'image': 'assets/python.png', 'languageName': 'Python'},
-    {'title': 'Misi Harian:\nJava Variable', 'image': 'assets/java.png', 'languageName': 'Java'},
-    {'title': 'Misi Harian:\nC++ Basics', 'image': 'assets/cpp.png', 'languageName': 'C++'},
-    {'title': 'Misi Harian:\nHTML Tags', 'image': 'assets/html.png', 'languageName': 'HTML'},
+    {
+      'title': 'Misi Harian:\nPython Loop',
+      'image': 'assets/python.png',
+      'languageName': 'Python',
+    },
+    {
+      'title': 'Misi Harian:\nJava Variable',
+      'image': 'assets/java.png',
+      'languageName': 'Java',
+    },
+    {
+      'title': 'Misi Harian:\nC++ Basics',
+      'image': 'assets/cpp.png',
+      'languageName': 'C++',
+    },
+    {
+      'title': 'Misi Harian:\nHTML Tags',
+      'image': 'assets/html.png',
+      'languageName': 'HTML',
+    },
   ];
 
   int _questIndex = 0;
@@ -113,8 +129,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
-      final String userId =
-          (userData?['id'] ?? userData?['_id'] ?? '').toString();
+      final String userId = (userData?['id'] ?? userData?['_id'] ?? '')
+          .toString();
 
       if (userId.isEmpty) {
         if (!mounted) return;
@@ -129,8 +145,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final List<dynamic> allModules = await ApiService.getModules();
       final List<dynamic> allLanguages = await ApiService.getLanguages();
-      final List<dynamic> progressData =
-          await ApiService.getUserProgress(userId);
+      final List<dynamic> progressData = await ApiService.getUserProgress(
+        userId,
+      );
 
       final Set<String> validLanguageIds = allLanguages
           .map((lang) => (lang['_id'] ?? '').toString())
@@ -241,11 +258,12 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           final previousModule = languageModules[i - 1];
-          final String previousModuleId =
-              (previousModule['_id'] ?? '').toString();
+          final String previousModuleId = (previousModule['_id'] ?? '')
+              .toString();
 
-          final bool previousCompleted =
-              completedModuleIds.contains(previousModuleId);
+          final bool previousCompleted = completedModuleIds.contains(
+            previousModuleId,
+          );
 
           if (previousCompleted) {
             found = module;
@@ -278,9 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (nextModule == null) {
       await Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => const MateriScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const MateriScreen()),
       );
 
       await _loadData();
@@ -396,9 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       body: userData == null || isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.green),
-            )
+          ? const Center(child: CircularProgressIndicator(color: Colors.green))
           : SizedBox.expand(
               child: Stack(
                 children: [
@@ -439,16 +453,22 @@ class _HomeScreenState extends State<HomeScreen> {
     final String avatarUrl = (userData?['avatar_url'] ?? '').toString();
     final String name = (userData?['nama_lengkap'] ?? 'Coder').toString();
 
-    final String levelText =
-        xpInfo.isPro ? 'Level Pro' : 'Level ${xpInfo.level}';
+    final String levelText = xpInfo.isPro
+        ? 'Level Pro'
+        : 'Level ${xpInfo.level}';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.green,
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(35),
           bottomRight: Radius.circular(35),
+        ),
+        image: DecorationImage(
+          image: const AssetImage('assets/ijo.png'),
+          fit: BoxFit.cover,
+          opacity: 0.85,
         ),
       ),
       child: Column(
@@ -458,14 +478,11 @@ class _HomeScreenState extends State<HomeScreen> {
               CircleAvatar(
                 radius: 35,
                 backgroundColor: Colors.white,
-                backgroundImage:
-                    avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                backgroundImage: avatarUrl.isNotEmpty
+                    ? NetworkImage(avatarUrl)
+                    : null,
                 child: avatarUrl.isEmpty
-                    ? const Icon(
-                        Icons.person,
-                        size: 40,
-                        color: Colors.green,
-                      )
+                    ? const Icon(Icons.person, size: 40, color: Colors.green)
                     : null,
               ),
               const SizedBox(width: 16),
@@ -523,10 +540,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   textAlign: TextAlign.right,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ),
             ],
@@ -573,7 +587,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: nextModule == null ? Colors.green : Colors.orangeAccent,
+                  color: nextModule == null
+                      ? Colors.green
+                      : Colors.orangeAccent,
                   shape: BoxShape.circle,
                 ),
                 child: isContinueLoading
@@ -675,10 +691,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             'Current Quests',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(height: 15),
@@ -694,10 +707,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       begin: const Offset(1.2, 0),
                       end: Offset.zero,
                     ).animate(animation),
-                    child: FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    ),
+                    child: FadeTransition(opacity: animation, child: child),
                   ),
                   child: _buildQuestCard(
                     firstQuest['title']!,
@@ -716,10 +726,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       begin: const Offset(1.2, 0),
                       end: Offset.zero,
                     ).animate(animation),
-                    child: FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    ),
+                    child: FadeTransition(opacity: animation, child: child),
                   ),
                   child: _buildQuestCard(
                     secondQuest['title']!,
@@ -737,7 +744,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // --- PERUBAHAN 2: Fungsi untuk mencari bahasa di API dan melempar ke StudentModuleListScreen ---
-  Widget _buildQuestCard(String title, String imagePath, String languageNameTarget, {Key? key}) {
+  Widget _buildQuestCard(
+    String title,
+    String imagePath,
+    String languageNameTarget, {
+    Key? key,
+  }) {
     return GestureDetector(
       key: key,
       onTap: () async {
@@ -745,16 +757,20 @@ class _HomeScreenState extends State<HomeScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.green)),
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(color: Colors.green),
+          ),
         );
 
         try {
           // 2. Tarik daftar semua bahasa dari API
           final List<dynamic> languages = await ApiService.getLanguages();
-          
+
           // 3. Cari bahasa yang cocok dengan 'languageNameTarget' (misal: "Python")
           final targetLang = languages.firstWhere(
-            (lang) => (lang['nama_bahasa'] ?? '').toString().toLowerCase() == languageNameTarget.toLowerCase(),
+            (lang) =>
+                (lang['nama_bahasa'] ?? '').toString().toLowerCase() ==
+                languageNameTarget.toLowerCase(),
             orElse: () => null,
           );
 
@@ -776,7 +792,10 @@ class _HomeScreenState extends State<HomeScreen> {
           } else {
             // Jika bahasa tidak ada di database, lemparkan ke materi utama saja
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Bahasa $languageNameTarget belum tersedia!'), backgroundColor: Colors.orange),
+              SnackBar(
+                content: Text('Bahasa $languageNameTarget belum tersedia!'),
+                backgroundColor: Colors.orange,
+              ),
             );
             await Navigator.push(
               context,
@@ -804,26 +823,18 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 3),
-            )
+            ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.contain,
-              ),
-            ),
+            Expanded(child: Image.asset(imagePath, fit: BoxFit.contain)),
             const SizedBox(height: 10),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ],
         ),
@@ -846,7 +857,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 5),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -855,20 +866,16 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Peringkat Mingguan',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  'Peringkat Teratas',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => LeaderboardScreen(
-                          leaderboard: leaderboard,
-                        ),
+                        builder: (_) =>
+                            LeaderboardScreen(leaderboard: leaderboard),
                       ),
                     );
                   },
@@ -893,13 +900,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 final Color rankColor = index == 0
                     ? Colors.orangeAccent
                     : (index == 1
-                        ? Colors.blueGrey.shade300
-                        : Colors.brown.shade400);
+                          ? Colors.blueGrey.shade300
+                          : Colors.brown.shade400);
 
                 final String avatarUrl = (data['avatar_url'] ?? '').toString();
                 final int totalXp = _toInt(data['total_xp']);
-                final XpLevelInfo rankXpInfo =
-                    XpLevelHelper.calculate(totalXp);
+                final XpLevelInfo rankXpInfo = XpLevelHelper.calculate(totalXp);
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -972,7 +978,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                  ),  
+                  ),
                 );
               }),
           ],
